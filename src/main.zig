@@ -1,4 +1,20 @@
 const std = @import("std");
+const math = @import("std").math;
+const sdl = @cImport({
+    @cInclude("SDL2/SDL.h");
+});
+
+const Color = struct {
+    r: u8,
+    g: u8,
+    b: u8,
+    a: u8,
+};
+
+const WINDOW_WIDTH = 400;
+const WINDOW_HEIGHT = 600;
+const FPS: i32 = 60;
+const DELTA_TIME_SEC: f32 = 1.0 / @as(f32, @floatFromInt(FPS));
 
 fn is_prime(comptime n: usize) bool {
     var idx: usize = 2;
@@ -80,6 +96,15 @@ fn print_matrix(matrix: [500][500][moduli]i32, comptime idx: usize) void {
     }
 }
 
+const background = Color{ .r = 18, .g = 18, .b = 18, .a = 255 };
+
+fn render(renderer: *sdl.SDL_Renderer) void {
+    _ = sdl.SDL_SetRenderDrawColor(renderer, background.r, background.g, background.b, background.a);
+    _ = sdl.SDL_RenderClear(renderer);
+
+    sdl.SDL_RenderPresent(renderer);
+}
+
 const matrices = generate_matrices();
 pub fn main() !void {
     print_matrix(matrices[1], 1);
@@ -89,4 +114,45 @@ pub fn main() !void {
     print_matrix(matrices[5], 5);
     print_matrix(matrices[6], 6);
     print_matrix(matrices[7], 7);
+
+    if (sdl.SDL_Init(sdl.SDL_INIT_VIDEO) < 0) {
+        sdl.SDL_Log("Unable to initialize SDL: %s", sdl.SDL_GetError());
+        return error.SDLInitializationFailed;
+    }
+    defer sdl.SDL_Quit();
+
+    const window = sdl.SDL_CreateWindow("Main", 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, sdl.SDL_WINDOW_RESIZABLE) orelse {
+        sdl.SDL_Log("Unable to initialize SDL: %s", sdl.SDL_GetError());
+        return error.SDLInitializationFailed;
+    };
+    defer sdl.SDL_DestroyWindow(window);
+
+    const renderer = sdl.SDL_CreateRenderer(window, -1, sdl.SDL_RENDERER_ACCELERATED) orelse {
+        sdl.SDL_Log("Unable to initialize SDL: %s", sdl.SDL_GetError());
+        return error.SDLInitializationFailed;
+    };
+    defer sdl.SDL_DestroyRenderer(renderer);
+
+    var quit: bool = false;
+
+    while (!quit) {
+        var event: sdl.SDL_Event = undefined;
+        while (sdl.SDL_PollEvent(&event) != 0) {
+            switch (event.type) {
+                sdl.SDL_QUIT => {
+                    quit = true;
+                },
+                sdl.SDL_KEYDOWN => {
+                    if (event.key.keysym.sym == 'q' or event.key.keysym.sym == sdl.SDLK_ESCAPE) {
+                        quit = true;
+                    }
+                },
+                else => {},
+            }
+        }
+
+        render(renderer);
+
+        sdl.SDL_Delay(1000 / FPS);
+    }
 }
