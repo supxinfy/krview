@@ -72,7 +72,6 @@ fn generate_matrices() [number_of_matrices][500][500][moduli]i32 {
                                 local_matrices[s][i][j][k] -= local_matrices[s - 1][i - 1][j - 1][k];
                             }
                             if (i >= 1 and i <= s - 2 and s > 2) {
-                                // local_matrices[s][i][j][k] /= 2;
                                 local_matrices[s][i][j][k] *= (moduli_list[k] + 1) / 2;
                             }
 
