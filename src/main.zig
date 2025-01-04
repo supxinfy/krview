@@ -46,9 +46,73 @@ fn prime_list(comptime n: u32, comptime len: u32) [len]u32 {
     return result;
 }
 
-const number_of_matrices = 8;
-const moduli = 1;
-const moduli_list = [1]u32{5};
+fn colorScheme(n: i32, modulo: u32) Color {
+    var v: f32 = 0.0;
+    var h: f32 = 0.0;
+    const nn = @as(f32, @floatFromInt(n)) / @as(f32, @floatFromInt(modulo));
+    if (0 <= nn and nn < 0.5) {
+        h = @mod(0.77 * (1 - nn), 1);
+    } else {
+        h = @mod(0.414 * (1 - nn), 1);
+    }
+    if (0 <= nn and nn < 0.1) {
+        v = @mod(5 * h + 0.5, 1);
+    } else if (0.9 < nn and nn <= 1) {
+        v = @mod(-5 * nn + 5.5, 1);
+    } else {
+        v = 1;
+    }
+    var i: u8 = @as(u8, @intFromFloat(h * 6.0));
+    const f = h * 6.0 - @as(f32, @floatFromInt(i));
+    const q = v * (1.0 - f);
+    const t = v * f;
+    i = i % 6;
+    switch (i) {
+        0 => return Color{
+            .r = @as(u8, @intFromFloat(@mod(v * 255, 255))),
+            .g = @as(u8, @intFromFloat(@mod(t * 255, 255))),
+            .b = @as(u8, 0),
+            .a = 255,
+        },
+        1 => return Color{
+            .r = @as(u8, @intFromFloat(@mod(q * 255, 255))),
+            .g = @as(u8, @intFromFloat(@mod(v * 255, 255))),
+            .b = @as(u8, 0),
+            .a = 255,
+        },
+        2 => return Color{
+            .r = @as(u8, 0),
+            .g = @as(u8, @intFromFloat(@mod(v * 255, 255))),
+            .b = @as(u8, @intFromFloat(@mod(t * 255, 255))),
+            .a = 255,
+        },
+        3 => return Color{
+            .r = @as(u8, 0),
+            .g = @as(u8, @intFromFloat(@mod(q * 255, 255))),
+            .b = @as(u8, @intFromFloat(@mod(v * 255, 255))),
+            .a = 255,
+        },
+        4 => return Color{
+            .r = @as(u8, @intFromFloat(@mod(t * 255, 255))),
+            .g = @as(u8, 0),
+            .b = @as(u8, @intFromFloat(@mod(v * 255, 255))),
+            .a = 255,
+        },
+        5 => return Color{
+            .r = @as(u8, @intFromFloat(@mod(v * 255, 255))),
+            .g = @as(u8, 0),
+            .b = @as(u8, @intFromFloat(@mod(q * 255, 255))),
+            .a = 255,
+        },
+        else => {
+            return Color{ .r = 0, .g = 0, .b = 0, .a = 0 };
+        },
+    }
+}
+
+const number_of_matrices = 300;
+const moduli = amount_of_primes(33);
+const moduli_list = prime_list(33, moduli);
 
 var currect_matrix: usize = 1;
 var current_modulo: usize = 0;
@@ -57,53 +121,6 @@ const ORDER = "Order: {any}";
 const MODULO = "Modulo: {any}";
 
 const SDL_Color = sdl.struct_SDL_Color;
-
-fn generate_matrices() [number_of_matrices][500][500][moduli]i32 {
-    var local_matrices: [number_of_matrices][500][500][moduli]i32 = undefined;
-    for (0..number_of_matrices) |s| {
-        for (0..s + 1) |i| {
-            for (0..s + 1) |j| {
-                for (0..moduli) |k| {
-                    local_matrices[s][i][j][k] = 0;
-                    if (s == 0) {
-                        local_matrices[s][0][0][k] = 1;
-                    } else {
-                        if (i < s and j < s) {
-                            local_matrices[s][i][j][k] = local_matrices[s - 1][i][j][k];
-                            if (i > 0 and j < s) {
-                                local_matrices[s][i][j][k] += local_matrices[s - 1][i - 1][j][k];
-                            }
-                            if (j > 0 and i < s) {
-                                local_matrices[s][i][j][k] += local_matrices[s - 1][i][j - 1][k];
-                            }
-                            if (i > 0 and j > 0) {
-                                local_matrices[s][i][j][k] -= local_matrices[s - 1][i - 1][j - 1][k];
-                            }
-                            if (i >= 1 and i <= s - 2 and s > 2) {
-                                local_matrices[s][i][j][k] *= (moduli_list[k] + 1) / 2;
-                            }
-
-                            local_matrices[s][i][j][k] = @mod(local_matrices[s][i][j][k], moduli_list[k]);
-                        }
-                    }
-                }
-            }
-        }
-    }
-    return local_matrices;
-}
-
-fn print_matrix(matrix: [500][500][moduli]i32, comptime idx: usize) void {
-    for (0..moduli) |k| {
-        std.debug.print("Matrix {}, modulo {}\n", .{ idx, moduli_list[k] });
-        for (0..idx) |i| {
-            for (0..idx) |j| {
-                std.debug.print("{} ", .{matrix[i][j][k]});
-            }
-            std.debug.print("\n", .{});
-        }
-    }
-}
 
 fn make_rect(x: i32, y: i32, w: i32, h: i32) sdl.SDL_Rect {
     return sdl.SDL_Rect{
@@ -126,13 +143,15 @@ fn tosdlcolor(color: Color) SDL_Color {
 const background = Color{ .r = 18, .g = 18, .b = 18, .a = 255 };
 const text_color = Color{ .r = 208, .g = 208, .b = 208, .a = 255 };
 
-const srcrect_order = make_rect(0, 0, 100, 100);
-const dstrect_order = make_rect(0, 0, 120, 100);
+const srcrect_order = make_rect(0, 0, 140, 100);
+const dstrect_order = make_rect(0, 0, 140, 100);
 
-const srcrect_modulo = make_rect(0, 0, 120, 100);
-const dstrect_modulo = make_rect(0, 100, 120, 100);
+const srcrect_modulo = make_rect(0, 0, 140, 100);
+const dstrect_modulo = make_rect(0, 100, 140, 100);
 
-fn render(renderer: *sdl.SDL_Renderer, font: *sdl.TTF_Font, order_str: [*c]const u8, modulo_str: [*c]const u8) !void {
+const OFFSET = 200;
+
+fn render(renderer: *sdl.SDL_Renderer, font: *sdl.TTF_Font, order_str: [*c]const u8, modulo_str: [*c]const u8, matrix: [number_of_matrices][number_of_matrices][moduli]i32, idx: usize, modulo: usize) !void {
     _ = sdl.SDL_SetRenderDrawColor(renderer, background.r, background.g, background.b, background.a);
     _ = sdl.SDL_RenderClear(renderer);
 
@@ -162,18 +181,50 @@ fn render(renderer: *sdl.SDL_Renderer, font: *sdl.TTF_Font, order_str: [*c]const
 
     _ = sdl.SDL_RenderCopy(renderer, modulo_texture, &srcrect_modulo, &dstrect_modulo);
 
+    for (0..idx) |i| {
+        for (0..idx) |j| {
+            const color = colorScheme(matrix[i][j][modulo], moduli_list[modulo]);
+            _ = sdl.SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
+            _ = sdl.SDL_RenderFillRect(renderer, &make_rect(@as(i32, @intCast(WINDOW_WIDTH / (idx + 1) * j)), @as(i32, @intCast(OFFSET + i * (WINDOW_HEIGHT - OFFSET) / (idx + 1))), @as(i32, @intCast(WINDOW_WIDTH / (idx))), @as(i32, @intCast((WINDOW_HEIGHT - OFFSET) / (idx)))));
+            //_ = sdl.SDL_RenderDrawPoint(renderer, @as(c_int, @intCast(i + 50)), @as(c_int, @intCast(j + 150)));
+        }
+    }
+
     sdl.SDL_RenderPresent(renderer);
 }
 
-const matrices = generate_matrices();
+var matrices: [number_of_matrices][number_of_matrices][number_of_matrices][moduli]i32 = undefined;
 pub fn main() !void {
-    print_matrix(matrices[1], 1);
-    print_matrix(matrices[2], 2);
-    print_matrix(matrices[3], 3);
-    print_matrix(matrices[4], 4);
-    print_matrix(matrices[5], 5);
-    print_matrix(matrices[6], 6);
-    print_matrix(matrices[7], 7);
+    for (0..number_of_matrices) |s| {
+        for (0..s + 1) |i| {
+            for (0..s + 1) |j| {
+                for (0..moduli) |k| {
+                    matrices[s][i][j][k] = 0;
+                    if (s == 0) {
+                        matrices[s][0][0][k] = 1;
+                    } else {
+                        if (i < s and j < s) {
+                            matrices[s][i][j][k] = matrices[s - 1][i][j][k];
+                            if (i > 0 and j < s) {
+                                matrices[s][i][j][k] += matrices[s - 1][i - 1][j][k];
+                            }
+                            if (j > 0 and i < s) {
+                                matrices[s][i][j][k] += matrices[s - 1][i][j - 1][k];
+                            }
+                            if (i > 0 and j > 0) {
+                                matrices[s][i][j][k] -= matrices[s - 1][i - 1][j - 1][k];
+                            }
+                            if (i >= 1 and i <= s - 2 and s > 2) {
+                                matrices[s][i][j][k] *= @as(i32, @intCast((moduli_list[k] + 1) / 2));
+                            }
+
+                            matrices[s][i][j][k] = @mod(matrices[s][i][j][k], @as(i32, @intCast(moduli_list[k])));
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     const allocator = gpa.allocator();
@@ -221,7 +272,7 @@ pub fn main() !void {
         const modulo_str: []u8 = try std.fmt.allocPrint(
             allocator,
             MODULO ++ "\x00",
-            .{current_modulo},
+            .{moduli_list[current_modulo]},
         );
         defer allocator.free(modulo_str);
 
@@ -235,26 +286,38 @@ pub fn main() !void {
                     if (event.key.keysym.sym == 'q' or event.key.keysym.sym == sdl.SDLK_ESCAPE) {
                         quit = true;
                     }
+                    if (currect_matrix + 1 < number_of_matrices and (event.key.keysym.sym == 'w' or event.key.keysym.sym == sdl.SDLK_UP)) {
+                        currect_matrix += 1;
+                    }
+                    if (currect_matrix > 1 and (event.key.keysym.sym == 's' or event.key.keysym.sym == sdl.SDLK_DOWN)) {
+                        currect_matrix -= 1;
+                    }
+                    if (current_modulo > 0 and (event.key.keysym.sym == 'a' or event.key.keysym.sym == sdl.SDLK_LEFT)) {
+                        current_modulo -= 1;
+                    }
+                    if (current_modulo + 1 < moduli and (event.key.keysym.sym == 'd' or event.key.keysym.sym == sdl.SDLK_RIGHT)) {
+                        current_modulo += 1;
+                    }
                     if (event.key.keysym.sym == sdl.SDLK_SPACE) {}
                 },
                 else => {},
             }
         }
         const keyboard = sdl.SDL_GetKeyboardState(null);
-        if (current_modulo < moduli and keyboard[sdl.SDL_SCANCODE_A] != 0 or keyboard[sdl.SDL_SCANCODE_LEFT] != 0) {
+        if (current_modulo + 1 < moduli and (keyboard[sdl.SDL_SCANCODE_LSHIFT] != 0 and keyboard[sdl.SDL_SCANCODE_A] != 0 or keyboard[sdl.SDL_SCANCODE_LEFT] != 0)) {
             current_modulo += 1;
         }
-        if (current_modulo > 0 and keyboard[sdl.SDL_SCANCODE_D] != 0 or keyboard[sdl.SDL_SCANCODE_RIGHT] != 0) {
+        if (current_modulo > 0 and (keyboard[sdl.SDL_SCANCODE_LSHIFT] != 0 and keyboard[sdl.SDL_SCANCODE_D] != 0 or keyboard[sdl.SDL_SCANCODE_RIGHT] != 0)) {
             current_modulo -= 1;
         }
-        if (currect_matrix < number_of_matrices and keyboard[sdl.SDL_SCANCODE_W] != 0 or keyboard[sdl.SDL_SCANCODE_UP] != 0) {
-            currect_matrix += 1;
-        }
-        if (currect_matrix > 1 and keyboard[sdl.SDL_SCANCODE_S] != 0 or keyboard[sdl.SDL_SCANCODE_DOWN] != 0) {
+        if (currect_matrix > 1 and (keyboard[sdl.SDL_SCANCODE_LSHIFT] != 0 and keyboard[sdl.SDL_SCANCODE_S] != 0 or keyboard[sdl.SDL_SCANCODE_DOWN] != 0)) {
             currect_matrix -= 1;
         }
+        if (currect_matrix + 1 < number_of_matrices and (keyboard[sdl.SDL_SCANCODE_LSHIFT] != 0 and keyboard[sdl.SDL_SCANCODE_W] != 0 or keyboard[sdl.SDL_SCANCODE_UP] != 0)) {
+            currect_matrix += 1;
+        }
 
-        render(renderer, font, @as([*c]const u8, @ptrCast(order_str)), @as([*c]const u8, @ptrCast(modulo_str))) catch |err| {
+        render(renderer, font, @as([*c]const u8, @ptrCast(order_str)), @as([*c]const u8, @ptrCast(modulo_str)), matrices[currect_matrix], currect_matrix, current_modulo) catch |err| {
             return err;
         };
 
