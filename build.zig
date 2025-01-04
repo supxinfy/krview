@@ -17,6 +17,9 @@ pub fn build(b: *std.Build) void {
     exe.linkSystemLibrary("SDL2");
     exe.linkLibC();
 
+    exe.linkSystemLibrary("SDL2_ttf");
+    exe.linkLibC();
+
     const run_cmd = b.addRunArtifact(exe);
 
     run_cmd.step.dependOn(b.getInstallStep());

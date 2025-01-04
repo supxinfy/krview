@@ -3,6 +3,9 @@ const math = @import("std").math;
 const sdl = @cImport({
     @cInclude("SDL2/SDL.h");
 });
+const sdl_ttf = @cImport({
+    @cInclude("SDL2/SDL_ttf.h");
+});
 
 const Color = struct {
     r: u8,
@@ -11,8 +14,8 @@ const Color = struct {
     a: u8,
 };
 
-const WINDOW_WIDTH = 400;
-const WINDOW_HEIGHT = 600;
+const WINDOW_WIDTH = 500;
+const WINDOW_HEIGHT = 800;
 const FPS: i32 = 60;
 const DELTA_TIME_SEC: f32 = 1.0 / @as(f32, @floatFromInt(FPS));
 
@@ -49,6 +52,12 @@ fn prime_list(comptime n: u32, comptime len: u32) [len]u32 {
 const number_of_matrices = 8;
 const moduli = 1;
 const moduli_list = [1]u32{5};
+
+var currect_matrix: usize = 1;
+var current_modulo: usize = 0;
+
+const ORDER = "Order: {}";
+const MODULO = "Modulo: {}";
 
 fn generate_matrices() [number_of_matrices][500][500][moduli]i32 {
     var local_matrices: [number_of_matrices][500][500][moduli]i32 = undefined;
@@ -98,6 +107,7 @@ fn print_matrix(matrix: [500][500][moduli]i32, comptime idx: usize) void {
 }
 
 const background = Color{ .r = 18, .g = 18, .b = 18, .a = 255 };
+const text_color = Color{ .r = 208, .g = 208, .b = 208, .a = 255 };
 
 fn render(renderer: *sdl.SDL_Renderer) void {
     _ = sdl.SDL_SetRenderDrawColor(renderer, background.r, background.g, background.b, background.a);
@@ -134,6 +144,19 @@ pub fn main() !void {
     };
     defer sdl.SDL_DestroyRenderer(renderer);
 
+    if (sdl_ttf.TTF_Init() < 0) {
+        sdl.SDL_Log("Unable to initialize SDL_ttf: %s", sdl.SDL_GetError());
+        return error.SDL_ttfInitializationFailed;
+    }
+    defer sdl_ttf.TTF_Quit();
+
+    const font = sdl_ttf.TTF_OpenFont("assets/Terminus.ttf", 24);
+    if (font == null) {
+        sdl.SDL_Log("Unable to load font: %s", sdl.SDL_GetError());
+        return error.SDL_ttfFontNotFound;
+    }
+    defer sdl_ttf.TTF_CloseFont(font);
+
     var quit: bool = false;
 
     while (!quit) {
@@ -147,9 +170,23 @@ pub fn main() !void {
                     if (event.key.keysym.sym == 'q' or event.key.keysym.sym == sdl.SDLK_ESCAPE) {
                         quit = true;
                     }
+                    if (event.key.keysym.sym == sdl.SDLK_SPACE) {}
                 },
                 else => {},
             }
+        }
+        const keyboard = sdl.SDL_GetKeyboardState(null);
+        if (keyboard[sdl.SDL_SCANCODE_A] != 0 or keyboard[sdl.SDL_SCANCODE_LEFT] != 0 and current_modulo < moduli) {
+            current_modulo += 1;
+        }
+        if (keyboard[sdl.SDL_SCANCODE_D] != 0 or keyboard[sdl.SDL_SCANCODE_RIGHT] != 0 and current_modulo > 0) {
+            current_modulo -= 1;
+        }
+        if (keyboard[sdl.SDL_SCANCODE_W] != 0 or keyboard[sdl.SDL_SCANCODE_UP] != 0 and currect_matrix < number_of_matrices) {
+            currect_matrix += 1;
+        }
+        if (keyboard[sdl.SDL_SCANCODE_S] != 0 or keyboard[sdl.SDL_SCANCODE_DOWN] != 0 and currect_matrix > 1) {
+            currect_matrix -= 1;
         }
 
         render(renderer);
