@@ -2,8 +2,6 @@ const std = @import("std");
 const math = @import("std").math;
 const sdl = @cImport({
     @cInclude("SDL2/SDL.h");
-});
-const sdl_ttf = @cImport({
     @cInclude("SDL2/SDL_ttf.h");
 });
 
@@ -13,7 +11,6 @@ const Color = struct {
     b: u8,
     a: u8,
 };
-
 const WINDOW_WIDTH = 500;
 const WINDOW_HEIGHT = 800;
 const FPS: i32 = 60;
@@ -56,8 +53,10 @@ const moduli_list = [1]u32{5};
 var currect_matrix: usize = 1;
 var current_modulo: usize = 0;
 
-const ORDER = "Order: {}";
-const MODULO = "Modulo: {}";
+const ORDER = "Order: {any}";
+const MODULO = "Modulo: {any}";
+
+const SDL_Color = sdl.struct_SDL_Color;
 
 fn generate_matrices() [number_of_matrices][500][500][moduli]i32 {
     var local_matrices: [number_of_matrices][500][500][moduli]i32 = undefined;
@@ -106,12 +105,62 @@ fn print_matrix(matrix: [500][500][moduli]i32, comptime idx: usize) void {
     }
 }
 
+fn make_rect(x: i32, y: i32, w: i32, h: i32) sdl.SDL_Rect {
+    return sdl.SDL_Rect{
+        .x = x,
+        .y = y,
+        .w = w,
+        .h = h,
+    };
+}
+
+fn tosdlcolor(color: Color) SDL_Color {
+    return SDL_Color{
+        .r = color.r,
+        .g = color.g,
+        .b = color.b,
+        .a = color.a,
+    };
+}
+
 const background = Color{ .r = 18, .g = 18, .b = 18, .a = 255 };
 const text_color = Color{ .r = 208, .g = 208, .b = 208, .a = 255 };
 
-fn render(renderer: *sdl.SDL_Renderer) void {
+const srcrect_order = make_rect(0, 0, 100, 100);
+const dstrect_order = make_rect(0, 0, 120, 100);
+
+const srcrect_modulo = make_rect(0, 0, 120, 100);
+const dstrect_modulo = make_rect(0, 100, 120, 100);
+
+fn render(renderer: *sdl.SDL_Renderer, font: *sdl.TTF_Font, order_str: [*c]const u8, modulo_str: [*c]const u8) !void {
     _ = sdl.SDL_SetRenderDrawColor(renderer, background.r, background.g, background.b, background.a);
     _ = sdl.SDL_RenderClear(renderer);
+
+    const order_surface = sdl.TTF_RenderText_Solid(font, order_str, tosdlcolor(text_color));
+    defer sdl.SDL_FreeSurface(order_surface);
+
+    if (order_surface == null) {
+        sdl.SDL_Log("Unable to initialize sdl: %s", sdl.SDL_GetError());
+        return error.sdlSurfaceNotFound;
+    }
+    const order_texture = sdl.SDL_CreateTextureFromSurface(renderer, order_surface);
+    defer sdl.SDL_DestroyTexture(order_texture);
+
+    const modulo_surface = sdl.TTF_RenderText_Solid(font, modulo_str, tosdlcolor(text_color));
+    defer sdl.SDL_FreeSurface(modulo_surface);
+
+    if (modulo_surface == null) {
+        sdl.SDL_Log("Unable to initialize sdl: %s", sdl.SDL_GetError());
+        return error.sdlSurfaceNotFound;
+    }
+    const modulo_texture = sdl.SDL_CreateTextureFromSurface(renderer, modulo_surface);
+    defer sdl.SDL_DestroyTexture(modulo_texture);
+
+    _ = sdl.SDL_SetRenderDrawColor(renderer, text_color.r, text_color.g, text_color.b, text_color.a);
+
+    _ = sdl.SDL_RenderCopy(renderer, order_texture, &srcrect_order, &dstrect_order);
+
+    _ = sdl.SDL_RenderCopy(renderer, modulo_texture, &srcrect_modulo, &dstrect_modulo);
 
     sdl.SDL_RenderPresent(renderer);
 }
@@ -125,6 +174,9 @@ pub fn main() !void {
     print_matrix(matrices[5], 5);
     print_matrix(matrices[6], 6);
     print_matrix(matrices[7], 7);
+
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    const allocator = gpa.allocator();
 
     if (sdl.SDL_Init(sdl.SDL_INIT_VIDEO) < 0) {
         sdl.SDL_Log("Unable to initialize SDL: %s", sdl.SDL_GetError());
@@ -144,22 +196,35 @@ pub fn main() !void {
     };
     defer sdl.SDL_DestroyRenderer(renderer);
 
-    if (sdl_ttf.TTF_Init() < 0) {
-        sdl.SDL_Log("Unable to initialize SDL_ttf: %s", sdl.SDL_GetError());
-        return error.SDL_ttfInitializationFailed;
+    if (sdl.TTF_Init() < 0) {
+        sdl.SDL_Log("Unable to initialize sdl: %s", sdl.SDL_GetError());
+        return error.sdlInitializationFailed;
     }
-    defer sdl_ttf.TTF_Quit();
+    defer sdl.TTF_Quit();
 
-    const font = sdl_ttf.TTF_OpenFont("assets/Terminus.ttf", 24);
-    if (font == null) {
+    const font = sdl.TTF_OpenFont("assets/Terminus.ttf", 24) orelse {
         sdl.SDL_Log("Unable to load font: %s", sdl.SDL_GetError());
-        return error.SDL_ttfFontNotFound;
-    }
-    defer sdl_ttf.TTF_CloseFont(font);
+        return error.sdlFontNotFound;
+    };
+    defer sdl.TTF_CloseFont(font);
 
     var quit: bool = false;
 
     while (!quit) {
+        const order_str: []u8 = try std.fmt.allocPrint(
+            allocator,
+            ORDER ++ "\x00",
+            .{currect_matrix},
+        );
+        defer allocator.free(order_str);
+
+        const modulo_str: []u8 = try std.fmt.allocPrint(
+            allocator,
+            MODULO ++ "\x00",
+            .{current_modulo},
+        );
+        defer allocator.free(modulo_str);
+
         var event: sdl.SDL_Event = undefined;
         while (sdl.SDL_PollEvent(&event) != 0) {
             switch (event.type) {
@@ -176,20 +241,22 @@ pub fn main() !void {
             }
         }
         const keyboard = sdl.SDL_GetKeyboardState(null);
-        if (keyboard[sdl.SDL_SCANCODE_A] != 0 or keyboard[sdl.SDL_SCANCODE_LEFT] != 0 and current_modulo < moduli) {
+        if (current_modulo < moduli and keyboard[sdl.SDL_SCANCODE_A] != 0 or keyboard[sdl.SDL_SCANCODE_LEFT] != 0) {
             current_modulo += 1;
         }
-        if (keyboard[sdl.SDL_SCANCODE_D] != 0 or keyboard[sdl.SDL_SCANCODE_RIGHT] != 0 and current_modulo > 0) {
+        if (current_modulo > 0 and keyboard[sdl.SDL_SCANCODE_D] != 0 or keyboard[sdl.SDL_SCANCODE_RIGHT] != 0) {
             current_modulo -= 1;
         }
-        if (keyboard[sdl.SDL_SCANCODE_W] != 0 or keyboard[sdl.SDL_SCANCODE_UP] != 0 and currect_matrix < number_of_matrices) {
+        if (currect_matrix < number_of_matrices and keyboard[sdl.SDL_SCANCODE_W] != 0 or keyboard[sdl.SDL_SCANCODE_UP] != 0) {
             currect_matrix += 1;
         }
-        if (keyboard[sdl.SDL_SCANCODE_S] != 0 or keyboard[sdl.SDL_SCANCODE_DOWN] != 0 and currect_matrix > 1) {
+        if (currect_matrix > 1 and keyboard[sdl.SDL_SCANCODE_S] != 0 or keyboard[sdl.SDL_SCANCODE_DOWN] != 0) {
             currect_matrix -= 1;
         }
 
-        render(renderer);
+        render(renderer, font, @as([*c]const u8, @ptrCast(order_str)), @as([*c]const u8, @ptrCast(modulo_str))) catch |err| {
+            return err;
+        };
 
         sdl.SDL_Delay(1000 / FPS);
     }
