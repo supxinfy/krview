@@ -11,7 +11,7 @@ const Color = struct {
     b: u8,
     a: u8,
 };
-const WINDOW_WIDTH = 500;
+const WINDOW_WIDTH = 600;
 const WINDOW_HEIGHT = 800;
 const FPS: i32 = 60;
 const DELTA_TIME_SEC: f32 = 1.0 / @as(f32, @floatFromInt(FPS));
@@ -186,7 +186,6 @@ fn render(renderer: *sdl.SDL_Renderer, font: *sdl.TTF_Font, order_str: [*c]const
             const color = colorScheme(matrix[i][j][modulo], moduli_list[modulo]);
             _ = sdl.SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
             _ = sdl.SDL_RenderFillRect(renderer, &make_rect(@as(i32, @intCast(WINDOW_WIDTH / (idx + 1) * j)), @as(i32, @intCast(OFFSET + i * (WINDOW_HEIGHT - OFFSET) / (idx + 1))), @as(i32, @intCast(WINDOW_WIDTH / (idx))), @as(i32, @intCast((WINDOW_HEIGHT - OFFSET) / (idx)))));
-            //_ = sdl.SDL_RenderDrawPoint(renderer, @as(c_int, @intCast(i + 50)), @as(c_int, @intCast(j + 150)));
         }
     }
 
@@ -235,7 +234,7 @@ pub fn main() !void {
     }
     defer sdl.SDL_Quit();
 
-    const window = sdl.SDL_CreateWindow("Main", 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, sdl.SDL_WINDOW_RESIZABLE) orelse {
+    const window = sdl.SDL_CreateWindow("Krawtchouk Matrices", 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, sdl.SDL_WINDOW_RESIZABLE) orelse {
         sdl.SDL_Log("Unable to initialize SDL: %s", sdl.SDL_GetError());
         return error.SDLInitializationFailed;
     };
@@ -304,10 +303,10 @@ pub fn main() !void {
             }
         }
         const keyboard = sdl.SDL_GetKeyboardState(null);
-        if (current_modulo + 1 < moduli and (keyboard[sdl.SDL_SCANCODE_LSHIFT] != 0 and keyboard[sdl.SDL_SCANCODE_A] != 0 or keyboard[sdl.SDL_SCANCODE_LEFT] != 0)) {
+        if (current_modulo + 1 < moduli and (keyboard[sdl.SDL_SCANCODE_LSHIFT] != 0 and keyboard[sdl.SDL_SCANCODE_D] != 0 or keyboard[sdl.SDL_SCANCODE_LEFT] != 0)) {
             current_modulo += 1;
         }
-        if (current_modulo > 0 and (keyboard[sdl.SDL_SCANCODE_LSHIFT] != 0 and keyboard[sdl.SDL_SCANCODE_D] != 0 or keyboard[sdl.SDL_SCANCODE_RIGHT] != 0)) {
+        if (current_modulo > 0 and (keyboard[sdl.SDL_SCANCODE_LSHIFT] != 0 and keyboard[sdl.SDL_SCANCODE_A] != 0 or keyboard[sdl.SDL_SCANCODE_RIGHT] != 0)) {
             current_modulo -= 1;
         }
         if (currect_matrix > 1 and (keyboard[sdl.SDL_SCANCODE_LSHIFT] != 0 and keyboard[sdl.SDL_SCANCODE_S] != 0 or keyboard[sdl.SDL_SCANCODE_DOWN] != 0)) {
