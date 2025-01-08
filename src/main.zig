@@ -192,39 +192,92 @@ fn render(renderer: *sdl.SDL_Renderer, font: *sdl.TTF_Font, order_str: [*c]const
     sdl.SDL_RenderPresent(renderer);
 }
 
-var matrices: [number_of_matrices][number_of_matrices][number_of_matrices][moduli]i32 = undefined;
-pub fn main() !void {
-    for (0..number_of_matrices) |s| {
-        for (0..s + 1) |i| {
-            for (0..s + 1) |j| {
-                for (0..moduli) |k| {
-                    matrices[s][i][j][k] = 0;
-                    if (s == 0) {
-                        matrices[s][0][0][k] = 1;
-                    } else {
-                        if (i < s and j < s) {
-                            matrices[s][i][j][k] = matrices[s - 1][i][j][k];
-                            if (i > 0 and j < s) {
-                                matrices[s][i][j][k] += matrices[s - 1][i - 1][j][k];
-                            }
-                            if (j > 0 and i < s) {
-                                matrices[s][i][j][k] += matrices[s - 1][i][j - 1][k];
-                            }
-                            if (i > 0 and j > 0) {
-                                matrices[s][i][j][k] -= matrices[s - 1][i - 1][j - 1][k];
-                            }
-                            if (i >= 1 and i <= s - 2 and s > 2) {
-                                matrices[s][i][j][k] *= @as(i32, @intCast((moduli_list[k] + 1) / 2));
-                            }
+const srcrect_loading = make_rect(0, 0, 100, 100);
+const dstrect_loading = make_rect(0, 0, 100, 100);
+fn render_loading_screen(renderer: *sdl.SDL_Renderer, font: *sdl.TTF_Font) !void {
+    _ = sdl.SDL_SetRenderDrawColor(renderer, background.r, background.g, background.b, background.a);
+    _ = sdl.SDL_RenderClear(renderer);
 
-                            matrices[s][i][j][k] = @mod(matrices[s][i][j][k], @as(i32, @intCast(moduli_list[k])));
-                        }
-                    }
+    const loading_surface = sdl.TTF_RenderText_Solid(font, "Loading...", tosdlcolor(text_color));
+    defer sdl.SDL_FreeSurface(loading_surface);
+
+    if (loading_surface == null) {
+        sdl.SDL_Log("Unable to initialize sdl: %s", sdl.SDL_GetError());
+        return error.sdlSurfaceNotFound;
+    }
+    const loading_texture = sdl.SDL_CreateTextureFromSurface(renderer, loading_surface);
+    defer sdl.SDL_DestroyTexture(loading_texture);
+
+    _ = sdl.SDL_SetRenderDrawColor(renderer, text_color.r, text_color.g, text_color.b, text_color.a);
+
+    _ = sdl.SDL_RenderCopy(renderer, loading_texture, &srcrect_loading, &dstrect_loading);
+}
+
+var matrices: [number_of_matrices][number_of_matrices][number_of_matrices][moduli]i32 = undefined;
+
+fn matrices_modulo(s: usize, i: usize, j: usize) void {
+    for (0..moduli) |k| {
+        matrices[s][i][j][k] = 0;
+        if (s == 0) {
+            matrices[s][0][0][k] = 1;
+        } else {
+            if (i < s and j < s) {
+                matrices[s][i][j][k] = matrices[s - 1][i][j][k];
+                if (i > 0 and j < s) {
+                    matrices[s][i][j][k] += matrices[s - 1][i - 1][j][k];
                 }
+                if (j > 0 and i < s) {
+                    matrices[s][i][j][k] += matrices[s - 1][i][j - 1][k];
+                }
+                if (i > 0 and j > 0) {
+                    matrices[s][i][j][k] -= matrices[s - 1][i - 1][j - 1][k];
+                }
+                if (i >= 1 and i <= s - 2 and s > 2) {
+                    matrices[s][i][j][k] *= @as(i32, @intCast((moduli_list[k] + 1) >> 1));
+                }
+
+                matrices[s][i][j][k] = @mod(matrices[s][i][j][k], @as(i32, @intCast(moduli_list[k])));
             }
         }
     }
+}
 
+fn calculate_row(s: usize, i: usize) void {
+    for (0..s + 1) |j| {
+        matrices_modulo(s, i, j);
+    }
+}
+
+fn calculate_matrix(s: usize) !void {
+    const cpus = try std.Thread.getCpuCount();
+
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    defer _ = gpa.deinit();
+    const allocator = gpa.allocator();
+
+    var pool: std.Thread.Pool = undefined;
+    try pool.init(.{ .allocator = allocator });
+    defer pool.deinit();
+
+    if (s < cpus) {
+        for (0..s + 1) |i| {
+            calculate_row(s, i);
+        }
+        return;
+    }
+
+    for (0..s + 1) |i| {
+        try pool.spawn(calculate_row, .{ s, i });
+    }
+}
+
+fn calculate_data() !void {
+    for (0..number_of_matrices) |s| {
+        try calculate_matrix(s);
+    }
+}
+
+pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     const allocator = gpa.allocator();
 
@@ -257,6 +310,12 @@ pub fn main() !void {
         return error.sdlFontNotFound;
     };
     defer sdl.TTF_CloseFont(font);
+
+    render_loading_screen(renderer, font) catch |err| {
+        return err;
+    };
+
+    try calculate_data();
 
     var quit: bool = false;
 
