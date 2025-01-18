@@ -362,10 +362,10 @@ pub fn main() !void {
             }
         }
         const keyboard = sdl.SDL_GetKeyboardState(null);
-        if (current_modulo + 1 < moduli and (keyboard[sdl.SDL_SCANCODE_LSHIFT] != 0 and keyboard[sdl.SDL_SCANCODE_D] != 0 or keyboard[sdl.SDL_SCANCODE_LEFT] != 0)) {
+        if (current_modulo + 1 < moduli and (keyboard[sdl.SDL_SCANCODE_LSHIFT] != 0 and keyboard[sdl.SDL_SCANCODE_D] != 0 or keyboard[sdl.SDL_SCANCODE_RIGHT] != 0)) {
             current_modulo += 1;
         }
-        if (current_modulo > 0 and (keyboard[sdl.SDL_SCANCODE_LSHIFT] != 0 and keyboard[sdl.SDL_SCANCODE_A] != 0 or keyboard[sdl.SDL_SCANCODE_RIGHT] != 0)) {
+        if (current_modulo > 0 and (keyboard[sdl.SDL_SCANCODE_LSHIFT] != 0 and keyboard[sdl.SDL_SCANCODE_A] != 0 or keyboard[sdl.SDL_SCANCODE_LEFT] != 0)) {
             current_modulo -= 1;
         }
         if (currect_matrix > 1 and (keyboard[sdl.SDL_SCANCODE_LSHIFT] != 0 and keyboard[sdl.SDL_SCANCODE_S] != 0 or keyboard[sdl.SDL_SCANCODE_DOWN] != 0)) {
