@@ -18,7 +18,7 @@ Here is an example of the Kravchuk matrix viewer in action:
 To install `krview`, clone the repository and build the project:
 
 ```sh
-git clone https://github.com/yourusername/krview.git
+git clone https://github.com/supxinfy/krview.git
 cd krview
 zig build
 ```

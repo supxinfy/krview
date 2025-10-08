@@ -11,8 +11,8 @@ const Color = struct {
     b: u8,
     a: u8,
 };
-const WINDOW_WIDTH = 600;
-const WINDOW_HEIGHT = 800;
+const WINDOW_WIDTH = 800;
+const WINDOW_HEIGHT = 900;
 const FPS: i32 = 60;
 const DELTA_TIME_SEC: f32 = 1.0 / @as(f32, @floatFromInt(FPS));
 
@@ -362,16 +362,16 @@ pub fn main() !void {
             }
         }
         const keyboard = sdl.SDL_GetKeyboardState(null);
-        if (current_modulo + 1 < moduli and (keyboard[sdl.SDL_SCANCODE_LSHIFT] != 0 and keyboard[sdl.SDL_SCANCODE_D] != 0 or keyboard[sdl.SDL_SCANCODE_RIGHT] != 0)) {
+        if (current_modulo + 1 < moduli and (keyboard[sdl.SDL_SCANCODE_LSHIFT] != 0 and (keyboard[sdl.SDL_SCANCODE_D] != 0 or keyboard[sdl.SDL_SCANCODE_RIGHT] != 0))) {
             current_modulo += 1;
         }
-        if (current_modulo > 0 and (keyboard[sdl.SDL_SCANCODE_LSHIFT] != 0 and keyboard[sdl.SDL_SCANCODE_A] != 0 or keyboard[sdl.SDL_SCANCODE_LEFT] != 0)) {
+        if (current_modulo > 0 and (keyboard[sdl.SDL_SCANCODE_LSHIFT] != 0 and (keyboard[sdl.SDL_SCANCODE_A] != 0 or keyboard[sdl.SDL_SCANCODE_LEFT] != 0))) {
             current_modulo -= 1;
         }
-        if (currect_matrix > 1 and (keyboard[sdl.SDL_SCANCODE_LSHIFT] != 0 and keyboard[sdl.SDL_SCANCODE_S] != 0 or keyboard[sdl.SDL_SCANCODE_DOWN] != 0)) {
+        if (currect_matrix > 1 and (keyboard[sdl.SDL_SCANCODE_LSHIFT] != 0 and (keyboard[sdl.SDL_SCANCODE_S] != 0 or keyboard[sdl.SDL_SCANCODE_DOWN] != 0))) {
             currect_matrix -= 1;
         }
-        if (currect_matrix + 1 < number_of_matrices and (keyboard[sdl.SDL_SCANCODE_LSHIFT] != 0 and keyboard[sdl.SDL_SCANCODE_W] != 0 or keyboard[sdl.SDL_SCANCODE_UP] != 0)) {
+        if (currect_matrix + 1 < number_of_matrices and (keyboard[sdl.SDL_SCANCODE_LSHIFT] != 0 and (keyboard[sdl.SDL_SCANCODE_W] != 0 or keyboard[sdl.SDL_SCANCODE_UP] != 0))) {
             currect_matrix += 1;
         }
 
