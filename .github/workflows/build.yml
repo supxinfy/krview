@@ -58,16 +58,22 @@ jobs:
           echo "VCPKG_ROOT=$env:VCPKG_ROOT" | Out-File -Append -FilePath $env:GITHUB_ENV
       # ---------- BUILD ----------
       - name: Build
+        if: matrix.os == 'windows-latest'
         run: |
-          if [ "${{ matrix.os }}" == "windows-latest" ]; then
-            # On Windows, we need to pass the correct library and include paths
-            zig build-exe krview ReleaseFast -lSDL2 -lSDL2_ttf \
-              -I$VCPKG_ROOT/installed/x64-windows/include \
-              -L$VCPKG_ROOT/installed/x64-windows/lib
-          else
-            # On Linux and macOS, Zig should find SDL automatically if it's installed
-            zig build -Doptimize=ReleaseFast
-          fi
+          # On Windows, we need to pass the correct library and include paths
+          zig build-exe krview.zig -OReleaseFast -lSDL2 -lSDL2_ttf `
+            -I"$env:VCPKG_ROOT\installed\x64-windows\include" `
+            -L"$env:VCPKG_ROOT\installed\x64-windows\lib"
+        shell: pwsh
+        env:
+          VCPKG_ROOT: C:\vcpkg
+
+      - name: Build
+        if: matrix.os != 'windows-latest'
+        run: |
+          # On Linux and macOS, Zig should find SDL automatically if it's installed
+          zig build -Doptimize=ReleaseFast
+        shell: bash
 
       # ---------- PACKAGE ----------
       - name: Prepare artifact
