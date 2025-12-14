@@ -51,11 +51,11 @@ jobs:
         if: matrix.os == 'windows-latest'
         run: |
           vcpkg install sdl2 sdl2-ttf
-          export VCPKG_ROOT=$(vcpkg root)
-          export VCPKG_DEFAULT_TRIPLET=x64-windows
-          echo "C_INCLUDE_PATH=$VCPKG_ROOT/installed/x64-windows/include" >> $GITHUB_ENV
-          echo "LIBRARY_PATH=$VCPKG_ROOT/installed/x64-windows/lib" >> $GITHUB_ENV
-          echo "VCPKG_ROOT=$VCPKG_ROOT" >> $GITHUB_ENV
+          $env:VCPKG_ROOT = (vcpkg root)
+          $env:VCPKG_DEFAULT_TRIPLET = "x64-windows"
+          echo "C_INCLUDE_PATH=$env:VCPKG_ROOT/installed/x64-windows/include" | Out-File -Append -FilePath $env:GITHUB_ENV
+          echo "LIBRARY_PATH=$env:VCPKG_ROOT/installed/x64-windows/lib" | Out-File -Append -FilePath $env:GITHUB_ENV
+          echo "VCPKG_ROOT=$env:VCPKG_ROOT" | Out-File -Append -FilePath $env:GITHUB_ENV
       # ---------- BUILD ----------
       - name: Build
         run: |
