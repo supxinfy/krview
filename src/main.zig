@@ -50,12 +50,13 @@ pub fn main() !void {
     r.render_loading_screen(renderer, font) catch |err| {
         return err;
     };
-    sdl.SDL_PumpEvents(); // give OS a chance
-    sdl.SDL_Delay(16); // let it breathe
+    sdl.SDL_PumpEvents();
+    sdl.SDL_Delay(16);
     try kr.calculate_data();
 
     var quit: bool = false;
     var update: bool = true;
+    var helping_screen: bool = true;
 
     while (!quit) {
         const order_str: []u8 = try std.fmt.allocPrint(
@@ -82,6 +83,9 @@ pub fn main() !void {
                 sdl.SDL_KEYDOWN => {
                     if (event.key.keysym.sym == 'q' or event.key.keysym.sym == sdl.SDLK_ESCAPE) {
                         quit = true;
+                    }
+                    if (event.key.keysym.sym == 'h' or event.key.keysym.sym == sdl.SDLK_SPACE) {
+                        helping_screen = !helping_screen;
                     }
                     if (event.key.keysym.sym == 'c') {
                         clrs.current_color_scheme.name = clrs.nextColorScheme(clrs.current_color_scheme.name);
@@ -119,6 +123,14 @@ pub fn main() !void {
         if (currect_matrix + 1 < kr.number_of_matrices and (keyboard[sdl.SDL_SCANCODE_LSHIFT] != 0 and (keyboard[sdl.SDL_SCANCODE_W] != 0 or keyboard[sdl.SDL_SCANCODE_UP] != 0))) {
             currect_matrix += 1;
             update = true;
+        }
+        if (helping_screen) {
+            r.render_helping_screen(renderer, font) catch |err| {
+                return err;
+            };
+            sdl.SDL_PumpEvents();
+            sdl.SDL_Delay(16);
+            continue;
         }
         if (!update) {
             r.FPSdelay();

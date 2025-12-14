@@ -1,5 +1,7 @@
 const std = @import("std");
 
+const lut = @import("colors_lut.zig");
+
 pub const Color = struct {
     r: u8,
     g: u8,
@@ -138,6 +140,24 @@ fn Log_colorScheme(n: i32, modulo: u32) Color {
     return Color{ .r = log, .g = log, .b = log, .a = 255 };
 }
 
+fn lut_colorSchemes(n: i32, modulo: u32, lut_array: [256][3]u8) Color {
+    const t = @as(f32, 255) / @as(f32, @floatFromInt(modulo));
+    const len = 256;
+    const x = t * @as(f32, @floatFromInt(n));
+    const i = @min(@as(usize, @intFromFloat(x)), len - 2);
+    const f = x - @as(f32, @floatFromInt(i));
+
+    const c0 = lut_array[i];
+    const c1 = lut_array[i + 1];
+
+    return Color{
+        .r = @intFromFloat((1 - f) * @as(f32, @floatFromInt(c0[0])) + f * @as(f32, @floatFromInt(c1[0]))),
+        .g = @intFromFloat((1 - f) * @as(f32, @floatFromInt(c0[1])) + f * @as(f32, @floatFromInt(c1[1]))),
+        .b = @intFromFloat((1 - f) * @as(f32, @floatFromInt(c0[2])) + f * @as(f32, @floatFromInt(c1[2]))),
+        .a = 255,
+    };
+}
+
 pub fn colorScheme(n: i32, modulo: u32) Color {
     if (std.mem.eql(u8, current_color_scheme.name, "Gogin")) {
         return Gogin_colorScheme(n, modulo);
@@ -147,6 +167,12 @@ pub fn colorScheme(n: i32, modulo: u32) Color {
         return Log_colorScheme(n, modulo);
     } else if (std.mem.eql(u8, current_color_scheme.name, "Hue")) {
         return Hue_colorScheme(n, modulo);
+    } else if (std.mem.eql(u8, current_color_scheme.name, "Viridis")) {
+        return lut_colorSchemes(n, modulo, lut.viridis_lut);
+    } else if (std.mem.eql(u8, current_color_scheme.name, "Plasma")) {
+        return lut_colorSchemes(n, modulo, lut.plasma_lut);
+    } else if (std.mem.eql(u8, current_color_scheme.name, "Magma")) {
+        return lut_colorSchemes(n, modulo, lut.magma_lut);
     } else {
         return Gogin_colorScheme(n, modulo); // Default to Gogin if unknown
     }
@@ -156,6 +182,9 @@ pub fn nextColorScheme(name: []const u8) []const u8 {
     if (std.mem.eql(u8, name, "Gogin")) return "Gray";
     if (std.mem.eql(u8, name, "Gray")) return "Log";
     if (std.mem.eql(u8, name, "Log")) return "Hue";
-    if (std.mem.eql(u8, name, "Hue")) return "Gogin";
+    if (std.mem.eql(u8, name, "Hue")) return "Viridis";
+    if (std.mem.eql(u8, name, "Viridis")) return "Plasma";
+    if (std.mem.eql(u8, name, "Plasma")) return "Magma";
+    if (std.mem.eql(u8, name, "Magma")) return "Gogin";
     return "Gogin";
 }

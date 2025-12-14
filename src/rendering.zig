@@ -40,12 +40,6 @@ fn tosdlcolor(color: clrs.Color) SDL_Color {
 const background = clrs.Color{ .r = 18, .g = 18, .b = 18, .a = 255 };
 const text_color = clrs.Color{ .r = 208, .g = 208, .b = 208, .a = 255 };
 
-const srcrect_order = make_rect(0, 0, 140, 100);
-const dstrect_order = make_rect(0, 0, 140, 100);
-
-const srcrect_modulo = make_rect(0, 0, 140, 100);
-const dstrect_modulo = make_rect(0, 100, 140, 100);
-
 pub fn render(renderer: *sdl.SDL_Renderer, font: *sdl.TTF_Font, order_str: [*c]const u8, modulo_str: [*c]const u8, matrix: [kr.number_of_matrices][kr.number_of_matrices][kr.moduli]i32, idx: usize, modulo: usize) !void {
     _ = sdl.SDL_SetRenderDrawColor(renderer, background.r, background.g, background.b, background.a);
     _ = sdl.SDL_RenderClear(renderer);
@@ -71,6 +65,12 @@ pub fn render(renderer: *sdl.SDL_Renderer, font: *sdl.TTF_Font, order_str: [*c]c
     defer sdl.SDL_DestroyTexture(modulo_texture);
 
     _ = sdl.SDL_SetRenderDrawColor(renderer, text_color.r, text_color.g, text_color.b, text_color.a);
+
+    const srcrect_order = make_rect(0, 0, 2 * order_surface.*.w, 2 * order_surface.*.h);
+    const dstrect_order = make_rect(0, 0, 2 * order_surface.*.w, 2 * order_surface.*.h);
+
+    const srcrect_modulo = make_rect(0, 0, 2 * modulo_surface.*.w, 2 * modulo_surface.*.h);
+    const dstrect_modulo = make_rect(0, order_surface.*.h + 18, 2 * modulo_surface.*.w, 2 * modulo_surface.*.h);
 
     _ = sdl.SDL_RenderCopy(renderer, order_texture, &srcrect_order, &dstrect_order);
 
@@ -99,8 +99,6 @@ pub fn render(renderer: *sdl.SDL_Renderer, font: *sdl.TTF_Font, order_str: [*c]c
     sdl.SDL_RenderPresent(renderer);
 }
 
-const srcrect_loading = make_rect(0, 0, 100, 100);
-const dstrect_loading = make_rect(0, 0, 100, 100);
 pub fn render_loading_screen(renderer: *sdl.SDL_Renderer, font: *sdl.TTF_Font) !void {
     _ = sdl.SDL_SetRenderDrawColor(renderer, background.r, background.g, background.b, background.a);
     _ = sdl.SDL_RenderClear(renderer);
@@ -117,7 +115,44 @@ pub fn render_loading_screen(renderer: *sdl.SDL_Renderer, font: *sdl.TTF_Font) !
 
     _ = sdl.SDL_SetRenderDrawColor(renderer, text_color.r, text_color.g, text_color.b, text_color.a);
 
+    const srcrect_loading = make_rect(0, 0, loading_surface.*.w, loading_surface.*.h);
+    const dstrect_loading = make_rect(0, 0, loading_surface.*.w, loading_surface.*.h);
     _ = sdl.SDL_RenderCopy(renderer, loading_texture, &srcrect_loading, &dstrect_loading);
+
+    sdl.SDL_RenderPresent(renderer);
+}
+
+pub fn render_helping_screen(renderer: *sdl.SDL_Renderer, font: *sdl.TTF_Font) !void {
+    _ = sdl.SDL_SetRenderDrawColor(renderer, background.r, background.g, background.b, background.a);
+    _ = sdl.SDL_RenderClear(renderer);
+
+    const help_lines = [_][*c]const u8{
+        "Controls:",
+        "- Up/Down Arrow: Increase/Decrease Matrix Order",
+        "- Left/Right Arrow: Change Modulo",
+        "- C: Change Color Scheme",
+        "- H: Toggle Help Screen",
+        "- Q: Quit Application",
+    };
+    var line_y: i32 = 0;
+    for (help_lines) |line| {
+        const helping_surface = sdl.TTF_RenderText_Solid(font, line, tosdlcolor(text_color));
+        defer sdl.SDL_FreeSurface(helping_surface);
+
+        if (helping_surface == null) {
+            sdl.SDL_Log("Unable to initialize sdl: %s", sdl.SDL_GetError());
+            return error.sdlSurfaceNotFound;
+        }
+        const helping_texture = sdl.SDL_CreateTextureFromSurface(renderer, helping_surface);
+        defer sdl.SDL_DestroyTexture(helping_texture);
+
+        _ = sdl.SDL_SetRenderDrawColor(renderer, text_color.r, text_color.g, text_color.b, text_color.a);
+
+        const dstrect_helping = make_rect((WINDOW_WIDTH - helping_surface.*.w) >> 1, line_y + (WINDOW_HEIGHT - helping_surface.*.h) >> 1, helping_surface.*.w, helping_surface.*.h);
+        _ = sdl.SDL_RenderCopy(renderer, helping_texture, null, &dstrect_helping);
+
+        line_y += helping_surface.*.h + 10;
+    }
 
     sdl.SDL_RenderPresent(renderer);
 }

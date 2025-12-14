@@ -25,15 +25,27 @@ Here is an example of the Kravchuk matrix viewer in action:
 
 - Gray-scale scheme
 
-![Gogin's color scheme](assets/gray.png)
+![Gray-scale color scheme](assets/gray.png)
 
 - logarithmic scheme
 
-![Gogin's color scheme](assets/log.png)
+![Logarithmic color scheme](assets/log.png)
 
 - linear hue scheme
 
-![Gogin's color scheme](assets/hue.png)
+![Linear Hue color scheme](assets/hue.png)
+
+- viridis
+
+![Viridis color scheme](assets/viridis.png)
+
+- magma
+
+![Magma color scheme](assets/magma.png)
+
+- plasma
+
+![Plasma color scheme](assets/plasma.png)
 
 ### Keybinds
 
@@ -42,6 +54,7 @@ Here is an example of the Kravchuk matrix viewer in action:
 - `W` and `S` or `UP` and `DOWN` change the order
 - `A` and `D` or `LEFT` and `RIGHT` change the modulo
 - `SHIFT` increases speed of change
+- `H` or `SPACE` toggles helping screen
 
 ## Installation
 
