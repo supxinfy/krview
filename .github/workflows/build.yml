@@ -64,7 +64,7 @@ jobs:
           $env:SDL2_INCLUDE_PATH = "C:\vcpkg\installed\x64-windows\include"
           $env:SDL2_LIB_PATH = "C:\vcpkg\installed\x64-windows\lib"
           zig build-exe krview ReleaseFast -lSDL2 -lSDL2_ttf \
-            -I$env:SDL2_INCLUDE_PATH -L$env:SDL2_LIB_PATH
+            -I"$env:SDL2_INCLUDE_PATH" -L"$env:SDL2_LIB_PATH"
         shell: pwsh
         env:
           ZIG_VERSION: 0.12.0
