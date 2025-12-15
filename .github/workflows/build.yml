@@ -60,18 +60,21 @@ jobs:
       - name: Build (Windows)
         if: matrix.os == 'windows-latest'
         run: |
-          zig build -Doptimize=ReleaseFast
+          # Explicitly set include and lib paths for SDL2 and SDL2_ttf
+          $env:SDL2_INCLUDE_PATH = "C:\vcpkg\installed\x64-windows\include"
+          $env:SDL2_LIB_PATH = "C:\vcpkg\installed\x64-windows\lib"
+          zig build-exe krview ReleaseFast -lSDL2 -lSDL2_ttf \
+            -I$env:SDL2_INCLUDE_PATH -L$env:SDL2_LIB_PATH
         shell: pwsh
         env:
           ZIG_VERSION: 0.12.0
-          C_INCLUDE_PATH: C:\vcpkg\installed\x64-windows\include
-          LIBRARY_PATH: C:\vcpkg\installed\x64-windows\lib
-          VCPKG_ROOT: C:\vcpkg
+          C_INCLUDE_PATH: "C:\\vcpkg\\installed\\x64-windows\\include"
+          LIBRARY_PATH: "C:\\vcpkg\\installed\\x64-windows\\lib"
+          VCPKG_ROOT: "C:\\vcpkg"
 
-      - name: Build
+      - name: Build (Linux/Mac)
         if: matrix.os != 'windows-latest'
         run: |
-          # On Linux and macOS, Zig should find SDL automatically if it's installed
           zig build -Doptimize=ReleaseFast
         shell: bash
 
