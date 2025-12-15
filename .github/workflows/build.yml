@@ -57,15 +57,15 @@ jobs:
           echo "LIBRARY_PATH=$env:VCPKG_ROOT\installed\x64-windows\lib" | Out-File -Append -FilePath $env:GITHUB_ENV
           echo "VCPKG_ROOT=$env:VCPKG_ROOT" | Out-File -Append -FilePath $env:GITHUB_ENV
       # ---------- BUILD ----------
-      - name: Build
+      - name: Build (Windows)
         if: matrix.os == 'windows-latest'
         run: |
-          # On Windows, we need to pass the correct library and include paths
-          zig build-exe krview.zig -OReleaseFast -lSDL2 -lSDL2_ttf `
-            -I"$env:VCPKG_ROOT\installed\x64-windows\include" `
-            -L"$env:VCPKG_ROOT\installed\x64-windows\lib"
+          zig build -Doptimize=ReleaseFast
         shell: pwsh
         env:
+          ZIG_VERSION: 0.12.0
+          C_INCLUDE_PATH: C:\vcpkg\installed\x64-windows\include
+          LIBRARY_PATH: C:\vcpkg\installed\x64-windows\lib
           VCPKG_ROOT: C:\vcpkg
 
       - name: Build
