@@ -20,17 +20,6 @@ pub fn build(b: *std.Build) void {
     exe.linkSystemLibrary("SDL2_ttf");
     exe.linkLibC();
 
-    const sdl_path = b.optionalPathFromEnv("VCPKG_ROOT") orelse .{ .path = "C:/vcpkg" };
-    exe.addIncludePath(.{ .path = b.pathJoin(&.{ sdl_path, "installed", "x64-windows", "include" }) });
-    exe.linkLibrary(.{
-        .name = "SDL2",
-        .path = b.pathJoin(&.{ sdl_path, "installed", "x64-windows", "lib", "SDL2.lib" }),
-    });
-    exe.linkLibrary(.{
-        .name = "SDL2_ttf",
-        .path = b.pathJoin(&.{ sdl_path, "installed", "x64-windows", "lib", "SDL2_ttf.lib" }),
-    });
-
     const run_cmd = b.addRunArtifact(exe);
 
     run_cmd.step.dependOn(b.getInstallStep());
