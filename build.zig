@@ -14,10 +14,19 @@ pub fn build(b: *std.Build) void {
 
     b.installArtifact(exe);
 
-    exe.linkSystemLibrary("SDL2");
-    exe.linkLibC();
+    if (target.result.os.tag == .windows) {
+        const sdl_root = "C:/vcpkg/installed/x64-windows";
 
-    exe.linkSystemLibrary("SDL2_ttf");
+        exe.addIncludePath(b.path(sdl_root ++ "/include"));
+        exe.addLibraryPath(b.path(sdl_root ++ "/lib"));
+
+        exe.linkSystemLibrary("SDL2");
+        exe.linkSystemLibrary("SDL2_ttf");
+    } else {
+        exe.linkSystemLibrary("SDL2");
+        exe.linkSystemLibrary("SDL2_ttf");
+    }
+
     exe.linkLibC();
 
     const run_cmd = b.addRunArtifact(exe);
