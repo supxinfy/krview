@@ -17,8 +17,8 @@ pub fn build(b: *std.Build) void {
     if (target.result.os.tag == .windows) {
         const sdl_root = "C:/vcpkg/installed/x64-windows";
 
-        exe.addIncludePath(b.path(sdl_root ++ "/include"));
-        exe.addLibraryPath(b.path(sdl_root ++ "/lib"));
+        exe.addIncludePath(.{ .cwd_relative = sdl_root ++ "/include" });
+        exe.addLibraryPath(.{ .cwd_relative = sdl_root ++ "/lib" });
 
         exe.linkSystemLibrary("SDL2");
         exe.linkSystemLibrary("SDL2_ttf");
