@@ -1,5 +1,8 @@
 name: Build & Release krview
 
+permissions:
+  contents: write
+
 on:
   push:
     tags:
