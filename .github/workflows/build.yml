@@ -79,7 +79,14 @@ jobs:
         shell: bash
         run: |
           mkdir -p dist
-          cp zig-out/bin/* dist/${{ matrix.artifact }}
+
+          if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
+            cp zig-out/bin/krview.exe dist/krview-windows.exe
+          elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
+            cp zig-out/bin/krview dist/krview-macos
+          else
+            cp zig-out/bin/krview dist/krview-linux
+          fi
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
