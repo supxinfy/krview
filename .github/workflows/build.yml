@@ -83,7 +83,7 @@ jobs:
         run: |
           mkdir -p dist/assets/fonts
           cp -r assets/fonts/Terminus.ttf dist/assets/fonts/Terminus.ttf
-          cp -r assets/fonts/OFL.txt dist/assets/fonts/OFL.txt
+          cp -r assets/fonts/OFL.TXT dist/assets/fonts/OFL.TXT
 
           if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
             cp zig-out/bin/krview.exe dist/krview-windows.exe
