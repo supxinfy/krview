@@ -77,14 +77,15 @@ jobs:
         shell: bash
 
       # ---------- PACKAGE ----------
-      - name: Prepare artifact
+      - name: Prepare artifact (Linux/Mac)
+        if: matrix.os != 'windows-latest'
         shell: bash
         run: |
           mkdir -p dist/assets/fonts
           cp -r assets/fonts/Terminus.ttf dist/assets/fonts/Terminus.ttf
           cp -r assets/fonts/OFL.TXT dist/assets/fonts/OFL.TXT
 
-          elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
+          if [[ "${{ matrix.os }}" == "macos-latest" ]]; then
             cp zig-out/bin/krview dist/krview-macos
           else
             cp zig-out/bin/krview dist/krview-linux
