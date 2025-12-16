@@ -21,12 +21,11 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
-            artifact: krview-linux
+            artifact: krview-linux.tar.gz
           - os: windows-latest
-            artifact: krview-windows
+            artifact: krview-windows.zip
           - os: macos-latest
-            artifact: krview-macos
-
+            artifact: krview-macos.tar.gz
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -89,7 +88,9 @@ jobs:
           Copy-Item assets\fonts\Terminus.ttf krview\assets\fonts\
           Copy-Item assets\fonts\OFL.TXT krview\assets\fonts\
 
-          Compress-Archive krview krview-windows-x64.zip
+          Compress-Archive krview ${{ matrix.artifact }}
+          mkdir dist
+          Move-Item ${{ matrix.artifact }} dist\${{ matrix.artifact }}
 
       - name: Package (Linux)
         if: matrix.os == 'ubuntu-latest'
@@ -101,7 +102,9 @@ jobs:
           cp assets/fonts/Terminus.ttf krview/assets/fonts/
           cp assets/fonts/OFL.TXT krview/assets/fonts/
 
-          tar -czf krview-linux-x64.tar.gz krview
+          tar -czf ${{ matrix.artifact }} krview
+          mkdir -p dist
+          mv ${{ matrix.artifact }} dist/${{ matrix.artifact }}
 
       - name: Package (macOS)
         if: matrix.os == 'macos-latest'
@@ -113,7 +116,9 @@ jobs:
           cp assets/fonts/Terminus.ttf krview/assets/fonts/
           cp assets/fonts/OFL.TXT krview/assets/fonts/
 
-          tar -czf krview-macos-x64.tar.gz krview
+          tar -czf ${{ matrix.artifact }} krview
+          mkdir -p dist
+          mv ${{ matrix.artifact }} dist/${{ matrix.artifact }}
 
 
       - name: Upload artifact
@@ -138,5 +143,5 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            release/**/krview-*-x64.tar.gz
-            release/**/krview-*-x64.zip
+            release/**/*.tar.gz
+            release/**/*.zip
