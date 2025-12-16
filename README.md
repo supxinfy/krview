@@ -8,7 +8,7 @@ This project is inspired by quite old Wolfram Mathematica notebook [[3](#referen
 
 Here is an example of the Kravchuk matrix viewer in action:
 
-![Kravchuk Matrix Viewer](assets/krview.png)
+![Kravchuk Matrix Viewer](assets/pictures/krview.png)
 
 ## Features
 
@@ -21,31 +21,31 @@ Here is an example of the Kravchuk matrix viewer in action:
 
 - Gogin's scheme
 
-![Gogin's color scheme](assets/gogin.png)
+![Gogin's color scheme](assets/pictures/gogin.png)
 
 - Gray-scale scheme
 
-![Gray-scale color scheme](assets/gray.png)
+![Gray-scale color scheme](assets/pictures/gray.png)
 
 - logarithmic scheme
 
-![Logarithmic color scheme](assets/log.png)
+![Logarithmic color scheme](assets/pictures/log.png)
 
 - linear hue scheme
 
-![Linear Hue color scheme](assets/hue.png)
+![Linear Hue color scheme](assets/pictures/hue.png)
 
 - viridis
 
-![Viridis color scheme](assets/viridis.png)
+![Viridis color scheme](assets/pictures/viridis.png)
 
 - magma
 
-![Magma color scheme](assets/magma.png)
+![Magma color scheme](assets/pictures/magma.png)
 
 - plasma
 
-![Plasma color scheme](assets/plasma.png)
+![Plasma color scheme](assets/pictures/plasma.png)
 
 ### Keybinds
 
@@ -101,6 +101,12 @@ Follow the on-screen instructions to visualize Kravchuk matrices.
 ## License
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+
+## Third-party assets
+
+This project bundles [Terminus Font](https://files.ax86.net/terminus-ttf/) version 4.49.3.
+
+Terminus Font is licensed under the [SIL Open Font License](https://openfontlicense.org), Version 1.1. You can find license at `assets/fonts/OFL.txt`.
 
 ## References
 

@@ -41,7 +41,7 @@ pub fn main() !void {
     }
     defer sdl.TTF_Quit();
 
-    const font = sdl.TTF_OpenFont("assets/Terminus.ttf", 24) orelse {
+    const font = sdl.TTF_OpenFont("assets/fonts/Terminus.ttf", 24) orelse {
         sdl.SDL_Log("Unable to load font: %s", sdl.SDL_GetError());
         return error.sdlFontNotFound;
     };
