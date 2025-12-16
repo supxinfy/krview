@@ -18,13 +18,12 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     strategy:
-      fail-fast: false
       matrix:
         include:
           - os: ubuntu-latest
             artifact: krview-linux
           - os: windows-latest
-            artifact: krview-windows.exe
+            artifact: krview-windows
           - os: macos-latest
             artifact: krview-macos
 
@@ -85,19 +84,30 @@ jobs:
           cp -r assets/fonts/Terminus.ttf dist/assets/fonts/Terminus.ttf
           cp -r assets/fonts/OFL.TXT dist/assets/fonts/OFL.TXT
 
-          if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
-            cp zig-out/bin/krview.exe dist/krview-windows.exe
           elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
             cp zig-out/bin/krview dist/krview-macos
           else
             cp zig-out/bin/krview dist/krview-linux
           fi
+      - name: Prepare artifact (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          mkdir dist
+          mkdir dist\assets\fonts
+          Copy-Item zig-out\bin\krview.exe dist\
+          Copy-Item C:\vcpkg\installed\x64-windows\bin\SDL2.dll dist\
+          Copy-Item C:\vcpkg\installed\x64-windows\bin\SDL2_ttf.dll dist\
+
+          # Font + license
+          Copy-Item assets\fonts\Terminus.ttf dist\assets\fonts\
+          Copy-Item assets\fonts\OFL.TXT dist\assets\fonts\
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact }}
-          path: dist/${{ matrix.artifact }}
+          path: dist
 
   release:
     name: Create GitHub Release
