@@ -81,28 +81,27 @@ pub fn main() !void {
                     quit = true;
                 },
                 sdl.SDL_KEYDOWN => {
-                    if (event.key.keysym.sym == sdl.SDL_SCANCODE_Q or event.key.keysym.sym == sdl.SDLK_ESCAPE) {
+                    if (event.key.keysym.scancode == sdl.SDL_SCANCODE_Q or event.key.keysym.scancode == sdl.SDLK_ESCAPE) {
                         quit = true;
                     }
-                    if (event.key.keysym.sym == sdl.SDL_SCANCODE_H or event.key.keysym.sym == sdl.SDLK_SPACE) {
+                    if (event.key.keysym.scancode == sdl.SDL_SCANCODE_H or event.key.keysym.scancode == sdl.SDL_SCANCODE_SPACE) {
                         helping_screen = !helping_screen;
                     }
-                    if (event.key.keysym.sym == sdl.SDL_SCANCODE_C) {
+                    if (event.key.keysym.scancode == sdl.SDL_SCANCODE_C) {
                         clrs.current_color_scheme.name = clrs.nextColorScheme(clrs.current_color_scheme.name);
                     }
-                    if (currect_matrix + 1 < kr.number_of_matrices and (event.key.keysym.sym == sdl.SDL_SCANCODE_W or event.key.keysym.sym == sdl.SDLK_UP)) {
+                    if (currect_matrix + 1 < kr.number_of_matrices and (event.key.keysym.scancode == sdl.SDL_SCANCODE_W or event.key.keysym.scancode == sdl.SDL_SCANCODE_UP)) {
                         currect_matrix += 1;
                     }
-                    if (currect_matrix > 1 and (event.key.keysym.sym == sdl.SDL_SCANCODE_S or event.key.keysym.sym == sdl.SDLK_DOWN)) {
+                    if (currect_matrix > 1 and (event.key.keysym.scancode == sdl.SDL_SCANCODE_S or event.key.keysym.scancode == sdl.SDL_SCANCODE_DOWN)) {
                         currect_matrix -= 1;
                     }
-                    if (current_modulo > 0 and (event.key.keysym.sym == sdl.SDL_SCANCODE_A or event.key.keysym.sym == sdl.SDLK_LEFT)) {
+                    if (current_modulo > 0 and (event.key.keysym.scancode == sdl.SDL_SCANCODE_A or event.key.keysym.scancode == sdl.SDL_SCANCODE_LEFT)) {
                         current_modulo -= 1;
                     }
-                    if (current_modulo + 1 < kr.moduli and (event.key.keysym.sym == sdl.SDL_SCANCODE_D or event.key.keysym.sym == sdl.SDLK_RIGHT)) {
+                    if (current_modulo + 1 < kr.moduli and (event.key.keysym.scancode == sdl.SDL_SCANCODE_D or event.key.keysym.scancode == sdl.SDL_SCANCODE_RIGHT)) {
                         current_modulo += 1;
                     }
-                    if (event.key.keysym.sym == sdl.SDLK_SPACE) {}
                 },
                 else => {},
             }
@@ -129,7 +128,7 @@ pub fn main() !void {
                 return err;
             };
             sdl.SDL_PumpEvents();
-            sdl.SDL_Delay(16);
+            sdl.SDL_Delay(500);
             continue;
         }
         if (!update) {

@@ -122,19 +122,53 @@ pub fn render_loading_screen(renderer: *sdl.SDL_Renderer, font: *sdl.TTF_Font) !
     sdl.SDL_RenderPresent(renderer);
 }
 
+var flash_press_notice: bool = true;
 pub fn render_helping_screen(renderer: *sdl.SDL_Renderer, font: *sdl.TTF_Font) !void {
     _ = sdl.SDL_SetRenderDrawColor(renderer, background.r, background.g, background.b, background.a);
     _ = sdl.SDL_RenderClear(renderer);
 
+    const desctiption_lines = [_][*c]const u8{
+        "Krawtchouk Matrices Visualization Tool",
+        "-------------------------------------",
+        "This application visualizes Krawtchouk matrices, which are",
+        "orthogonal matrices with applications in coding theory,",
+        "signal processing, and combinatorial designs.",
+        " ",
+        "Use the controls below to explore different orders and moduli.",
+        " ",
+    };
+
     const help_lines = [_][*c]const u8{
         "Controls:",
-        "- Up/Down Arrow: Increase/Decrease Matrix Order",
-        "- Left/Right Arrow: Change Modulo",
+        "- Up/Down Arrow or W/S: Increase/Decrease Matrix Order",
+        "- Left/Right Arrow or A/D: Change Modulo",
         "- C: Change Color Scheme",
-        "- H: Toggle Help Screen",
+        "Schemes Available: Gogin, Gray-scale, Logarithmic,",
+        "Viridis, Plasma, Inferno, Magma",
+        "- H or SPACE: Toggle Help Screen",
         "- Q: Quit Application",
     };
     var line_y: i32 = 0;
+    for (desctiption_lines) |line| {
+        const description_surface = sdl.TTF_RenderText_Solid(font, line, tosdlcolor(text_color));
+        defer sdl.SDL_FreeSurface(description_surface);
+
+        if (description_surface == null) {
+            sdl.SDL_Log("Unable to initialize sdl: %s", sdl.SDL_GetError());
+            return error.sdlSurfaceNotFound;
+        }
+        const description_texture = sdl.SDL_CreateTextureFromSurface(renderer, description_surface);
+        defer sdl.SDL_DestroyTexture(description_texture);
+
+        _ = sdl.SDL_SetRenderDrawColor(renderer, text_color.r, text_color.g, text_color.b, text_color.a);
+
+        const particular_point_x = (WINDOW_WIDTH - description_surface.*.w) >> 1;
+        const dstrect_description = make_rect(particular_point_x, 50 + line_y + description_surface.*.h, description_surface.*.w, description_surface.*.h);
+        _ = sdl.SDL_RenderCopy(renderer, description_texture, null, &dstrect_description);
+
+        line_y += description_surface.*.h + 10;
+    }
+    line_y = 0;
     for (help_lines) |line| {
         const helping_surface = sdl.TTF_RenderText_Solid(font, line, tosdlcolor(text_color));
         defer sdl.SDL_FreeSurface(helping_surface);
@@ -148,11 +182,29 @@ pub fn render_helping_screen(renderer: *sdl.SDL_Renderer, font: *sdl.TTF_Font) !
 
         _ = sdl.SDL_SetRenderDrawColor(renderer, text_color.r, text_color.g, text_color.b, text_color.a);
 
-        const dstrect_helping = make_rect((WINDOW_WIDTH - helping_surface.*.w) >> 1, line_y + (WINDOW_HEIGHT - helping_surface.*.h) >> 1, helping_surface.*.w, helping_surface.*.h);
+        const particular_point_x = 108;
+        const dstrect_helping = make_rect(particular_point_x, line_y + (WINDOW_HEIGHT - helping_surface.*.h) >> 1, helping_surface.*.w, helping_surface.*.h);
         _ = sdl.SDL_RenderCopy(renderer, helping_texture, null, &dstrect_helping);
 
         line_y += helping_surface.*.h + 10;
     }
+    if (flash_press_notice) {
+        const press_surface = sdl.TTF_RenderText_Solid(font, "Press H or SPACE to continue...", tosdlcolor(text_color));
+        defer sdl.SDL_FreeSurface(press_surface);
+
+        if (press_surface == null) {
+            sdl.SDL_Log("Unable to initialize sdl: %s", sdl.SDL_GetError());
+            return error.sdlSurfaceNotFound;
+        }
+        const press_texture = sdl.SDL_CreateTextureFromSurface(renderer, press_surface);
+        defer sdl.SDL_DestroyTexture(press_texture);
+
+        _ = sdl.SDL_SetRenderDrawColor(renderer, text_color.r, text_color.g, text_color.b, text_color.a);
+
+        const dstrect_press = make_rect((WINDOW_WIDTH - press_surface.*.w) >> 1, WINDOW_HEIGHT - 100, press_surface.*.w, press_surface.*.h);
+        _ = sdl.SDL_RenderCopy(renderer, press_texture, null, &dstrect_press);
+    }
+    flash_press_notice = !flash_press_notice;
 
     sdl.SDL_RenderPresent(renderer);
 }
