@@ -89,7 +89,10 @@ jobs:
             "SDL2_ttf.dll",
             "freetype.dll",
             "zlib1.dll",
-            "libpng16.dll"
+            "libpng16.dll",
+            "brotlidec.dll",
+            "brotlicommon.dll",
+            "bz2.dll"
           )
 
           foreach ($d in $deps) {
