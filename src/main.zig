@@ -50,7 +50,6 @@ pub fn main() !void {
     r.render_loading_screen(renderer, font) catch |err| {
         return err;
     };
-    sdl.SDL_PumpEvents();
     sdl.SDL_Delay(16);
     try kr.calculate_data();
 
@@ -81,7 +80,7 @@ pub fn main() !void {
                     quit = true;
                 },
                 sdl.SDL_KEYDOWN => {
-                    if (event.key.keysym.scancode == sdl.SDL_SCANCODE_Q or event.key.keysym.scancode == sdl.SDLK_ESCAPE) {
+                    if (event.key.keysym.scancode == sdl.SDL_SCANCODE_Q or event.key.keysym.scancode == sdl.SDL_SCANCODE_ESCAPE) {
                         quit = true;
                     }
                     if (event.key.keysym.scancode == sdl.SDL_SCANCODE_H or event.key.keysym.scancode == sdl.SDL_SCANCODE_SPACE) {
@@ -127,7 +126,6 @@ pub fn main() !void {
             r.render_helping_screen(renderer, font) catch |err| {
                 return err;
             };
-            sdl.SDL_PumpEvents();
             sdl.SDL_Delay(500);
             continue;
         }
