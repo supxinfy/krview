@@ -1,83 +1,32 @@
 const std = @import("std");
 
 const lut = @import("colors_lut.zig");
-
-pub const Color = struct {
-    r: u8,
-    g: u8,
-    b: u8,
-    a: u8,
-};
-const ColorScheme = struct {
-    name: []const u8,
-};
+const hue = @import("hue.zig");
+const colortype = @import("colors.zig");
+const Color = colortype.Color;
+const ColorScheme = colortype.ColorScheme;
 
 pub var current_color_scheme = ColorScheme{
     .name = "Gogin",
 };
 
 fn Gogin_colorScheme(n: i32, modulo: u32) Color {
-    var v: f32 = 0.0;
-    var h: f32 = 0.0;
-    const nn = @as(f32, @floatFromInt(n)) / @as(f32, @floatFromInt(modulo));
-    if (0 <= nn and nn < 0.5) {
-        h = @mod(0.77 * (1 - nn), 1);
-    } else {
-        h = @mod(0.414 * (1 - nn), 1);
+    const nn: f32 =
+        @as(f32, @floatFromInt(n)) /
+        @as(f32, @floatFromInt(modulo));
+
+    const hu: f32 = if (nn < 0.5) 0.77 else 0.414;
+
+    var br: f32 = 1.0;
+    if (nn < 0.1) {
+        br = @as(f32, 5.0) * nn + @as(f32, 0.5);
+    } else if (nn > 0.9) {
+        br = -@as(f32, 5.0) * nn + @as(f32, 5.5);
     }
-    if (0 <= nn and nn < 0.1) {
-        v = @mod(5 * h + 0.5, 1);
-    } else if (0.9 < nn and nn <= 1) {
-        v = @mod(-5 * nn + 5.5, 1);
-    } else {
-        v = 1;
-    }
-    var i: u8 = @as(u8, @intFromFloat(h * 6.0));
-    const f = h * 6.0 - @as(f32, @floatFromInt(i));
-    const q = v * (1.0 - f);
-    const t = v * f;
-    i = i % 6;
-    switch (i) {
-        0 => return Color{
-            .r = @as(u8, @intFromFloat(@mod(v * 255, 255))),
-            .g = @as(u8, @intFromFloat(@mod(t * 255, 255))),
-            .b = @as(u8, 0),
-            .a = 255,
-        },
-        1 => return Color{
-            .r = @as(u8, @intFromFloat(@mod(q * 255, 255))),
-            .g = @as(u8, @intFromFloat(@mod(v * 255, 255))),
-            .b = @as(u8, 0),
-            .a = 255,
-        },
-        2 => return Color{
-            .r = @as(u8, 0),
-            .g = @as(u8, @intFromFloat(@mod(v * 255, 255))),
-            .b = @as(u8, @intFromFloat(@mod(t * 255, 255))),
-            .a = 255,
-        },
-        3 => return Color{
-            .r = @as(u8, 0),
-            .g = @as(u8, @intFromFloat(@mod(q * 255, 255))),
-            .b = @as(u8, @intFromFloat(@mod(v * 255, 255))),
-            .a = 255,
-        },
-        4 => return Color{
-            .r = @as(u8, @intFromFloat(@mod(t * 255, 255))),
-            .g = @as(u8, 0),
-            .b = @as(u8, @intFromFloat(@mod(v * 255, 255))),
-            .a = 255,
-        },
-        5 => return Color{
-            .r = @as(u8, @intFromFloat(@mod(v * 255, 255))),
-            .g = @as(u8, 0),
-            .b = @as(u8, @intFromFloat(@mod(q * 255, 255))),
-            .a = 255,
-        },
-        else => {
-            return Color{ .r = 0, .g = 0, .b = 0, .a = 0 };
-        },
-    }
+
+    const h = hu * (1.0 - nn);
+
+    return hue.HSBtoRGB(h, br);
 }
 
 fn Hue_colorScheme(n: i32, modulo: u32) Color {

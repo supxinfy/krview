@@ -65,23 +65,31 @@ git clone https://github.com/supxinfy/krview.git
 cd krview
 zig build
 ```
+
 ### Dependencies
 
 #### macOS
 
 Install dependencies using Homebrew:
 
+- Install SDL:
+
 ```sh
 brew install sdl2 sdl_ttf
 ```
 
+- Install Zig:
+```sh
+brew install zig
+```
 #### Linux
 
 Install dependencies using your package manager. For example, on Ubuntu:
-
 ```sh
-sudo apt-get install libsdl2-dev libsdl2-ttf-dev
+sudo apt-get install libsdl2-dev libsdl2-ttf-dev zig
 ```
+
+*Note: Zig 0.13.0 used in this project*. Sometime I'll add version control, maybe...
 
 ## Usage
 

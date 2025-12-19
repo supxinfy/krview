@@ -2,24 +2,25 @@ const std = @import("std");
 
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
-
     const optimize = b.standardOptimizeOption(.{});
 
-    const exe = b.addExecutable(.{
-        .name = "krview",
+    const root_module = b.createModule(.{
         .root_source_file = b.path("src/main.zig"),
         .target = target,
         .optimize = optimize,
     });
 
-    b.installArtifact(exe);
+    // Add executable
+    const exe = b.addExecutable(.{
+        .name = "krview",
+        .root_module = root_module,
+    });
 
-    if (target.result.os.tag == .windows) {
+    // Link SDL2 libraries
+    if (target.query.os_tag == .windows) {
         const sdl_root = "C:/vcpkg/installed/x64-windows";
-
-        exe.addIncludePath(.{ .cwd_relative = sdl_root ++ "/include" });
-        exe.addLibraryPath(.{ .cwd_relative = sdl_root ++ "/lib" });
-
+        exe.addIncludePath(b.path(sdl_root ++ "/include"));
+        exe.addLibraryPath(b.path(sdl_root ++ "/lib"));
         exe.linkSystemLibrary("SDL2");
         exe.linkSystemLibrary("SDL2_ttf");
     } else {
@@ -29,8 +30,9 @@ pub fn build(b: *std.Build) void {
 
     exe.linkLibC();
 
+    // Install and add run step
+    b.installArtifact(exe);
     const run_cmd = b.addRunArtifact(exe);
-
     run_cmd.step.dependOn(b.getInstallStep());
 
     if (b.args) |args| {
