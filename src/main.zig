@@ -4,11 +4,6 @@ const r = @import("rendering.zig");
 const kr = @import("krawtchouk.zig");
 const clrs = @import("colorshemes.zig");
 
-const sdl = @cImport({
-    @cInclude("SDL2/SDL.h");
-    @cInclude("SDL2/SDL_ttf.h");
-});
-
 var current_matrix: usize = 1;
 var current_modulo: usize = 0;
 
@@ -16,46 +11,48 @@ const MIN_W = 400;
 const MIN_H = 400;
 
 pub fn main() !void {
-    _ = sdl.SDL_SetHint(sdl.SDL_HINT_RENDER_SCALE_QUALITY, "0");
+    _ = r.sdl.SDL_SetHint(r.sdl.SDL_HINT_RENDER_SCALE_QUALITY, "0");
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     const allocator = gpa.allocator();
 
-    if (sdl.SDL_Init(sdl.SDL_INIT_VIDEO) < 0) {
-        sdl.SDL_Log("Unable to initialize SDL: %s", sdl.SDL_GetError());
+    if (r.sdl.SDL_Init(r.sdl.SDL_INIT_VIDEO) < 0) {
+        r.sdl.SDL_Log("Unable to initialize SDL: %s", r.sdl.SDL_GetError());
         return error.SDLInitializationFailed;
     }
-    defer sdl.SDL_Quit();
+    defer r.sdl.SDL_Quit();
 
-    const window = r.createWindow() orelse {
-        sdl.SDL_Log("Unable to initialize SDL: %s", sdl.SDL_GetError());
+    const window: ?*r.sdl.SDL_Window = r.createWindow() orelse {
+        r.sdl.SDL_Log("Unable to initialize SDL: %s", r.sdl.SDL_GetError());
         return error.SDLInitializationFailed;
     };
 
-    _ = sdl.SDL_SetWindowMinimumSize(window, MIN_W, MIN_H);
-    defer sdl.SDL_DestroyWindow(window);
+    if (window) |w| {
+        _ = r.sdl.SDL_SetWindowMinimumSize(w, MIN_W, MIN_H);
+    }
+    defer r.sdl.SDL_DestroyWindow(window);
 
-    const renderer = sdl.SDL_CreateRenderer(window, -1, sdl.SDL_RENDERER_ACCELERATED) orelse {
-        sdl.SDL_Log("Unable to initialize SDL: %s", sdl.SDL_GetError());
+    const renderer = r.sdl.SDL_CreateRenderer(window, -1, r.sdl.SDL_RENDERER_ACCELERATED) orelse {
+        r.sdl.SDL_Log("Unable to initialize SDL: %s", r.sdl.SDL_GetError());
         return error.SDLInitializationFailed;
     };
-    defer sdl.SDL_DestroyRenderer(renderer);
+    defer r.sdl.SDL_DestroyRenderer(renderer);
 
-    if (sdl.TTF_Init() < 0) {
-        sdl.SDL_Log("Unable to initialize sdl: %s", sdl.SDL_GetError());
+    if (r.sdl.TTF_Init() < 0) {
+        r.sdl.SDL_Log("Unable to initialize sdl: %s", r.sdl.SDL_GetError());
         return error.sdlInitializationFailed;
     }
-    defer sdl.TTF_Quit();
+    defer r.sdl.TTF_Quit();
 
-    const font = sdl.TTF_OpenFont("assets/fonts/Terminus.ttf", 24) orelse {
-        sdl.SDL_Log("Unable to load font: %s", sdl.SDL_GetError());
+    const font = r.sdl.TTF_OpenFont("assets/fonts/Terminus.ttf", 24) orelse {
+        r.sdl.SDL_Log("Unable to load font: %s", r.sdl.SDL_GetError());
         return error.sdlFontNotFound;
     };
-    defer sdl.TTF_CloseFont(font);
+    defer r.sdl.TTF_CloseFont(font);
 
     r.render_loading_screen(renderer, font) catch |err| {
         return err;
     };
-    sdl.SDL_Delay(16);
+    r.sdl.SDL_Delay(16);
     try kr.calculate_data();
 
     var quit: bool = false;
@@ -78,38 +75,38 @@ pub fn main() !void {
         );
         defer allocator.free(modulo_str);
 
-        var event: sdl.SDL_Event = undefined;
-        while (sdl.SDL_PollEvent(&event) != 0) {
+        var event: r.sdl.SDL_Event = undefined;
+        while (r.sdl.SDL_PollEvent(&event) != 0) {
             update = true;
             switch (event.type) {
-                sdl.SDL_QUIT => {
+                r.sdl.SDL_QUIT => {
                     quit = true;
                 },
-                sdl.SDL_KEYDOWN => {
-                    if (event.key.keysym.scancode == sdl.SDL_SCANCODE_Q or event.key.keysym.scancode == sdl.SDL_SCANCODE_ESCAPE) {
+                r.sdl.SDL_KEYDOWN => {
+                    if (event.key.keysym.scancode == r.sdl.SDL_SCANCODE_Q or event.key.keysym.scancode == r.sdl.SDL_SCANCODE_ESCAPE) {
                         quit = true;
                     }
-                    if (event.key.keysym.scancode == sdl.SDL_SCANCODE_H or event.key.keysym.scancode == sdl.SDL_SCANCODE_SPACE) {
+                    if (event.key.keysym.scancode == r.sdl.SDL_SCANCODE_H or event.key.keysym.scancode == r.sdl.SDL_SCANCODE_SPACE) {
                         helping_screen = !helping_screen;
                     }
-                    if (event.key.keysym.scancode == sdl.SDL_SCANCODE_C) {
+                    if (event.key.keysym.scancode == r.sdl.SDL_SCANCODE_C) {
                         clrs.current_color_scheme.name = clrs.nextColorScheme(clrs.current_color_scheme.name);
                     }
-                    if (current_matrix + 1 < kr.number_of_matrices and (event.key.keysym.scancode == sdl.SDL_SCANCODE_W or event.key.keysym.scancode == sdl.SDL_SCANCODE_UP)) {
+                    if (current_matrix + 1 < kr.number_of_matrices and (event.key.keysym.scancode == r.sdl.SDL_SCANCODE_W or event.key.keysym.scancode == r.sdl.SDL_SCANCODE_UP)) {
                         current_matrix += 1;
                     }
-                    if (current_matrix > 1 and (event.key.keysym.scancode == sdl.SDL_SCANCODE_S or event.key.keysym.scancode == sdl.SDL_SCANCODE_DOWN)) {
+                    if (current_matrix > 1 and (event.key.keysym.scancode == r.sdl.SDL_SCANCODE_S or event.key.keysym.scancode == r.sdl.SDL_SCANCODE_DOWN)) {
                         current_matrix -= 1;
                     }
-                    if (current_modulo > 0 and (event.key.keysym.scancode == sdl.SDL_SCANCODE_A or event.key.keysym.scancode == sdl.SDL_SCANCODE_LEFT)) {
+                    if (current_modulo > 0 and (event.key.keysym.scancode == r.sdl.SDL_SCANCODE_A or event.key.keysym.scancode == r.sdl.SDL_SCANCODE_LEFT)) {
                         current_modulo -= 1;
                     }
-                    if (current_modulo + 1 < kr.moduli and (event.key.keysym.scancode == sdl.SDL_SCANCODE_D or event.key.keysym.scancode == sdl.SDL_SCANCODE_RIGHT)) {
+                    if (current_modulo + 1 < kr.moduli and (event.key.keysym.scancode == r.sdl.SDL_SCANCODE_D or event.key.keysym.scancode == r.sdl.SDL_SCANCODE_RIGHT)) {
                         current_modulo += 1;
                     }
                 },
-                sdl.SDL_WINDOWEVENT => {
-                    if (event.window.event == sdl.SDL_WINDOWEVENT_SIZE_CHANGED) {
+                r.sdl.SDL_WINDOWEVENT => {
+                    if (event.window.event == r.sdl.SDL_WINDOWEVENT_SIZE_CHANGED) {
                         r.WINDOW_WIDTH = @as(c_int, @intCast(event.window.data1));
                         r.WINDOW_HEIGHT = @as(c_int, @intCast(event.window.data2));
                     }
@@ -117,20 +114,20 @@ pub fn main() !void {
                 else => {},
             }
         }
-        const keyboard = sdl.SDL_GetKeyboardState(null);
-        if (current_modulo + 1 < kr.moduli and (keyboard[sdl.SDL_SCANCODE_LSHIFT] != 0 and (keyboard[sdl.SDL_SCANCODE_D] != 0 or keyboard[sdl.SDL_SCANCODE_RIGHT] != 0))) {
+        const keyboard = r.sdl.SDL_GetKeyboardState(null);
+        if (current_modulo + 1 < kr.moduli and (keyboard[r.sdl.SDL_SCANCODE_LSHIFT] != 0 and (keyboard[r.sdl.SDL_SCANCODE_D] != 0 or keyboard[r.sdl.SDL_SCANCODE_RIGHT] != 0))) {
             current_modulo += 1;
             update = true;
         }
-        if (current_modulo > 0 and (keyboard[sdl.SDL_SCANCODE_LSHIFT] != 0 and (keyboard[sdl.SDL_SCANCODE_A] != 0 or keyboard[sdl.SDL_SCANCODE_LEFT] != 0))) {
+        if (current_modulo > 0 and (keyboard[r.sdl.SDL_SCANCODE_LSHIFT] != 0 and (keyboard[r.sdl.SDL_SCANCODE_A] != 0 or keyboard[r.sdl.SDL_SCANCODE_LEFT] != 0))) {
             current_modulo -= 1;
             update = true;
         }
-        if (current_matrix > 1 and (keyboard[sdl.SDL_SCANCODE_LSHIFT] != 0 and (keyboard[sdl.SDL_SCANCODE_S] != 0 or keyboard[sdl.SDL_SCANCODE_DOWN] != 0))) {
+        if (current_matrix > 1 and (keyboard[r.sdl.SDL_SCANCODE_LSHIFT] != 0 and (keyboard[r.sdl.SDL_SCANCODE_S] != 0 or keyboard[r.sdl.SDL_SCANCODE_DOWN] != 0))) {
             current_matrix -= 1;
             update = true;
         }
-        if (current_matrix + 1 < kr.number_of_matrices and (keyboard[sdl.SDL_SCANCODE_LSHIFT] != 0 and (keyboard[sdl.SDL_SCANCODE_W] != 0 or keyboard[sdl.SDL_SCANCODE_UP] != 0))) {
+        if (current_matrix + 1 < kr.number_of_matrices and (keyboard[r.sdl.SDL_SCANCODE_LSHIFT] != 0 and (keyboard[r.sdl.SDL_SCANCODE_W] != 0 or keyboard[r.sdl.SDL_SCANCODE_UP] != 0))) {
             current_matrix += 1;
             update = true;
         }
@@ -138,7 +135,7 @@ pub fn main() !void {
             r.render_helping_screen(renderer, font) catch |err| {
                 return err;
             };
-            sdl.SDL_Delay(500);
+            r.sdl.SDL_Delay(500);
             continue;
         }
         if (!update) {

@@ -3,7 +3,7 @@ const clrs = @import("colorshemes.zig");
 const colortype = @import("colors.zig");
 const Color = colortype.Color;
 
-const sdl = @cImport({
+pub const sdl = @cImport({
     @cInclude("SDL2/SDL.h");
     @cInclude("SDL2/SDL_ttf.h");
 });
