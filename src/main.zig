@@ -9,8 +9,11 @@ const sdl = @cImport({
     @cInclude("SDL2/SDL_ttf.h");
 });
 
-var currect_matrix: usize = 1;
+var current_matrix: usize = 1;
 var current_modulo: usize = 0;
+
+const MIN_W = 400;
+const MIN_H = 400;
 
 pub fn main() !void {
     _ = sdl.SDL_SetHint(sdl.SDL_HINT_RENDER_SCALE_QUALITY, "0");
@@ -27,6 +30,8 @@ pub fn main() !void {
         sdl.SDL_Log("Unable to initialize SDL: %s", sdl.SDL_GetError());
         return error.SDLInitializationFailed;
     };
+
+    _ = sdl.SDL_SetWindowMinimumSize(window, MIN_W, MIN_H);
     defer sdl.SDL_DestroyWindow(window);
 
     const renderer = sdl.SDL_CreateRenderer(window, -1, sdl.SDL_RENDERER_ACCELERATED) orelse {
@@ -61,8 +66,9 @@ pub fn main() !void {
         const order_str: []u8 = try std.fmt.allocPrint(
             allocator,
             r.ORDER ++ "\x00",
-            .{currect_matrix},
+            .{current_matrix},
         );
+
         defer allocator.free(order_str);
 
         const modulo_str: []u8 = try std.fmt.allocPrint(
@@ -89,17 +95,23 @@ pub fn main() !void {
                     if (event.key.keysym.scancode == sdl.SDL_SCANCODE_C) {
                         clrs.current_color_scheme.name = clrs.nextColorScheme(clrs.current_color_scheme.name);
                     }
-                    if (currect_matrix + 1 < kr.number_of_matrices and (event.key.keysym.scancode == sdl.SDL_SCANCODE_W or event.key.keysym.scancode == sdl.SDL_SCANCODE_UP)) {
-                        currect_matrix += 1;
+                    if (current_matrix + 1 < kr.number_of_matrices and (event.key.keysym.scancode == sdl.SDL_SCANCODE_W or event.key.keysym.scancode == sdl.SDL_SCANCODE_UP)) {
+                        current_matrix += 1;
                     }
-                    if (currect_matrix > 1 and (event.key.keysym.scancode == sdl.SDL_SCANCODE_S or event.key.keysym.scancode == sdl.SDL_SCANCODE_DOWN)) {
-                        currect_matrix -= 1;
+                    if (current_matrix > 1 and (event.key.keysym.scancode == sdl.SDL_SCANCODE_S or event.key.keysym.scancode == sdl.SDL_SCANCODE_DOWN)) {
+                        current_matrix -= 1;
                     }
                     if (current_modulo > 0 and (event.key.keysym.scancode == sdl.SDL_SCANCODE_A or event.key.keysym.scancode == sdl.SDL_SCANCODE_LEFT)) {
                         current_modulo -= 1;
                     }
                     if (current_modulo + 1 < kr.moduli and (event.key.keysym.scancode == sdl.SDL_SCANCODE_D or event.key.keysym.scancode == sdl.SDL_SCANCODE_RIGHT)) {
                         current_modulo += 1;
+                    }
+                },
+                sdl.SDL_WINDOWEVENT => {
+                    if (event.window.event == sdl.SDL_WINDOWEVENT_SIZE_CHANGED) {
+                        r.WINDOW_WIDTH = @as(c_int, @intCast(event.window.data1));
+                        r.WINDOW_HEIGHT = @as(c_int, @intCast(event.window.data2));
                     }
                 },
                 else => {},
@@ -114,12 +126,12 @@ pub fn main() !void {
             current_modulo -= 1;
             update = true;
         }
-        if (currect_matrix > 1 and (keyboard[sdl.SDL_SCANCODE_LSHIFT] != 0 and (keyboard[sdl.SDL_SCANCODE_S] != 0 or keyboard[sdl.SDL_SCANCODE_DOWN] != 0))) {
-            currect_matrix -= 1;
+        if (current_matrix > 1 and (keyboard[sdl.SDL_SCANCODE_LSHIFT] != 0 and (keyboard[sdl.SDL_SCANCODE_S] != 0 or keyboard[sdl.SDL_SCANCODE_DOWN] != 0))) {
+            current_matrix -= 1;
             update = true;
         }
-        if (currect_matrix + 1 < kr.number_of_matrices and (keyboard[sdl.SDL_SCANCODE_LSHIFT] != 0 and (keyboard[sdl.SDL_SCANCODE_W] != 0 or keyboard[sdl.SDL_SCANCODE_UP] != 0))) {
-            currect_matrix += 1;
+        if (current_matrix + 1 < kr.number_of_matrices and (keyboard[sdl.SDL_SCANCODE_LSHIFT] != 0 and (keyboard[sdl.SDL_SCANCODE_W] != 0 or keyboard[sdl.SDL_SCANCODE_UP] != 0))) {
+            current_matrix += 1;
             update = true;
         }
         if (helping_screen) {
@@ -133,7 +145,7 @@ pub fn main() !void {
             r.FPSdelay();
             continue;
         } else {
-            r.render(renderer, font, @as([*c]const u8, @ptrCast(order_str)), @as([*c]const u8, @ptrCast(modulo_str)), kr.matrices[currect_matrix], currect_matrix, current_modulo) catch |err| {
+            r.render(renderer, font, @as([*c]const u8, @ptrCast(order_str)), @as([*c]const u8, @ptrCast(modulo_str)), kr.matrices[current_matrix], current_matrix, current_modulo) catch |err| {
                 return err;
             };
         }

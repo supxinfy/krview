@@ -1,13 +1,15 @@
 const kr = @import("krawtchouk.zig");
 const clrs = @import("colorshemes.zig");
+const colortype = @import("colors.zig");
+const Color = colortype.Color;
 
 const sdl = @cImport({
     @cInclude("SDL2/SDL.h");
     @cInclude("SDL2/SDL_ttf.h");
 });
 
-const WINDOW_WIDTH = 800;
-const WINDOW_HEIGHT = 900;
+pub var WINDOW_WIDTH: c_int = 800;
+pub var WINDOW_HEIGHT: c_int = 900;
 
 pub const ORDER = "Order: {any}";
 pub const MODULO = "Modulo: {any}";
@@ -17,7 +19,7 @@ const SDL_Color = sdl.struct_SDL_Color;
 const FPS: i32 = 60;
 const DELTA_TIME_SEC: f32 = 1.0 / @as(f32, @floatFromInt(FPS));
 
-const OFFSET = 200;
+const OFFSET = 80;
 
 fn make_rect(x: i32, y: i32, w: i32, h: i32) sdl.SDL_Rect {
     return sdl.SDL_Rect{
@@ -28,7 +30,7 @@ fn make_rect(x: i32, y: i32, w: i32, h: i32) sdl.SDL_Rect {
     };
 }
 
-fn tosdlcolor(color: clrs.Color) SDL_Color {
+fn tosdlcolor(color: colortype.Color) SDL_Color {
     return SDL_Color{
         .r = color.r,
         .g = color.g,
@@ -37,8 +39,8 @@ fn tosdlcolor(color: clrs.Color) SDL_Color {
     };
 }
 
-const background = clrs.Color{ .r = 18, .g = 18, .b = 18, .a = 255 };
-const text_color = clrs.Color{ .r = 208, .g = 208, .b = 208, .a = 255 };
+const background = colortype.Color{ .r = 18, .g = 18, .b = 18, .a = 255 };
+const text_color = colortype.Color{ .r = 208, .g = 208, .b = 208, .a = 255 };
 
 pub fn render(renderer: *sdl.SDL_Renderer, font: *sdl.TTF_Font, order_str: [*c]const u8, modulo_str: [*c]const u8, matrix: [kr.number_of_matrices][kr.number_of_matrices][kr.moduli]i32, idx: usize, modulo: usize) !void {
     _ = sdl.SDL_SetRenderDrawColor(renderer, background.r, background.g, background.b, background.a);
@@ -76,8 +78,8 @@ pub fn render(renderer: *sdl.SDL_Renderer, font: *sdl.TTF_Font, order_str: [*c]c
 
     _ = sdl.SDL_RenderCopy(renderer, modulo_texture, &srcrect_modulo, &dstrect_modulo);
 
-    const cellSizeW = @as(i32, @intCast(WINDOW_WIDTH / (idx)));
-    const cellSizeH = @as(i32, @intCast((WINDOW_HEIGHT - OFFSET) / (idx)));
+    const cellSizeW = @as(i32, @intCast(@as(usize, @intCast(WINDOW_WIDTH)) / (idx)));
+    const cellSizeH = @as(i32, @intCast((@as(usize, @intCast(WINDOW_HEIGHT)) - OFFSET) / (idx)));
     const cellSize = @min(cellSizeW, cellSizeH);
 
     const usedW = cellSize * @as(i32, @intCast(idx));
@@ -162,7 +164,7 @@ pub fn render_helping_screen(renderer: *sdl.SDL_Renderer, font: *sdl.TTF_Font) !
 
         _ = sdl.SDL_SetRenderDrawColor(renderer, text_color.r, text_color.g, text_color.b, text_color.a);
 
-        const particular_point_x = (WINDOW_WIDTH - description_surface.*.w) >> 1;
+        const particular_point_x = (@as(c_int, @intCast(WINDOW_WIDTH)) - description_surface.*.w) >> 1;
         const dstrect_description = make_rect(particular_point_x, 50 + line_y + description_surface.*.h, description_surface.*.w, description_surface.*.h);
         _ = sdl.SDL_RenderCopy(renderer, description_texture, null, &dstrect_description);
 
@@ -210,7 +212,7 @@ pub fn render_helping_screen(renderer: *sdl.SDL_Renderer, font: *sdl.TTF_Font) !
 }
 
 pub fn createWindow() ?*sdl.SDL_Window {
-    return sdl.SDL_CreateWindow("Krawtchouk Matrices", 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, sdl.SDL_WINDOW_RESIZABLE);
+    return sdl.SDL_CreateWindow("Krawtchouk Matrices", 0, 0, @as(c_int, @intCast(WINDOW_WIDTH)), @as(c_int, @intCast(WINDOW_HEIGHT)), sdl.SDL_WINDOW_RESIZABLE);
 }
 
 pub fn FPSdelay() void {
