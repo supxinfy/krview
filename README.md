@@ -16,6 +16,7 @@ Here is an example of the Kravchuk matrix viewer in action:
 - Support for various prime numbers
 - Interactive user interface
 - Several color schemes to view the data
+- Export images of matrices
 
 ### Examples of Color Schemes
 
