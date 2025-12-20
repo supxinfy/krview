@@ -93,7 +93,7 @@ Install dependencies using your package manager. For example, on Ubuntu:
 sudo apt-get install libsdl2-dev libsdl2-ttf-dev zig
 ```
 
-*Note: Zig 0.13.0 used in this project*. Sometime I'll add version control, maybe...
+This project is actively maintained and tested on Zig 0.15+. See releases for tagged versions.
 
 ## Usage
 
