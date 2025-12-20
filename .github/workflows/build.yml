@@ -54,7 +54,7 @@ jobs:
         run: |
           $VCPKG_ROOT = "C:\vcpkg"
 
-          vcpkg install sdl2:x64-windows sdl2-ttf:x64-windows sdl2-image:x64-windows
+          vcpkg install sdl2 sdl2-ttf sdl2-image
 
           echo "VCPKG_ROOT=$VCPKG_ROOT" | Out-File -Append $env:GITHUB_ENV
           echo "C_INCLUDE_PATH=$VCPKG_ROOT\installed\x64-windows\include" | Out-File -Append $env:GITHUB_ENV
