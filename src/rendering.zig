@@ -6,7 +6,7 @@ const Color = colortype.Color;
 pub const sdl = @cImport({
     @cInclude("SDL2/SDL.h");
     @cInclude("SDL2/SDL_ttf.h");
-    @cInclude("SDL2/SDL_Image.h");
+    @cInclude("SDL2/SDL_image.h");
 });
 
 pub var WINDOW_WIDTH: c_int = 800;

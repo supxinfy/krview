@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
 
 env:
-  ZIG_VERSION: 0.12.0
+  ZIG_VERSION: 0.15.2
 
 jobs:
   build:
@@ -64,7 +64,7 @@ jobs:
           zig build -Doptimize=ReleaseFast
         shell: pwsh
         env:
-          ZIG_VERSION: 0.12.0
+          ZIG_VERSION: 0.15.2
           C_INCLUDE_PATH: C:\vcpkg\installed\x64-windows\include
           LIBRARY_PATH: C:\vcpkg\installed\x64-windows\lib
           VCPKG_ROOT: C:\vcpkg
