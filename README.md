@@ -57,6 +57,8 @@ Here is an example of the Kravchuk matrix viewer in action:
 - `H` or `SPACE` toggles helping screen
 - `E` exports the screen into a .jpg image and saves into assets/screenshots
 
+Note that size of the image depends on size of the window.
+
 ## Installation
 
 To install `krview`, clone the repository and build the project:
