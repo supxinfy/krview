@@ -51,12 +51,20 @@ jobs:
       - name: Install SDL (Windows)
         if: matrix.os == 'windows-latest'
         run: |
-          vcpkg install sdl2 sdl2-ttf sdl2-image
+          vcpkg install sdl2:x64-windows sdl2-ttf:x64-windows sdl2-image:x64-windows
           $env:VCPKG_ROOT = "C:\vcpkg"
           $env:VCPKG_DEFAULT_TRIPLET = "x64-windows"
           echo "C_INCLUDE_PATH=$env:VCPKG_ROOT\installed\x64-windows\include" | Out-File -Append -FilePath $env:GITHUB_ENV
           echo "LIBRARY_PATH=$env:VCPKG_ROOT\installed\x64-windows\lib" | Out-File -Append -FilePath $env:GITHUB_ENV
           echo "VCPKG_ROOT=$env:VCPKG_ROOT" | Out-File -Append -FilePath $env:GITHUB_ENV
+      
+      #vcpkg install sdl2 sdl2-ttf sdl2-image    
+      # I pray for windows to die
+      - name: Set PATH for vcpkg DLLs
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          $env:PATH = "C:\vcpkg\installed\x64-windows\bin;$env:PATH"
       # ---------- BUILD ----------
       - name: Build (Windows)
         if: matrix.os == 'windows-latest'
