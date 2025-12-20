@@ -110,7 +110,6 @@ jobs:
             "SDL2.dll",
             "SDL2_ttf.dll",
             "SDL2_image.dll",
-            "libjpeg-9.dll",
             "freetype.dll",
             "zlib1.dll",
             "libpng16.dll",
