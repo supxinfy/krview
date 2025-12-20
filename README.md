@@ -55,6 +55,7 @@ Here is an example of the Kravchuk matrix viewer in action:
 - `A` and `D` or `LEFT` and `RIGHT` change the modulo
 - `SHIFT` increases speed of change
 - `H` or `SPACE` toggles helping screen
+- `E` exports the screen into a .jpg image and saves into assets/screenshots
 
 ## Installation
 

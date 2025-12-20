@@ -104,6 +104,26 @@ pub fn main() !void {
                     if (current_modulo + 1 < kr.moduli and (event.key.keysym.scancode == r.sdl.SDL_SCANCODE_D or event.key.keysym.scancode == r.sdl.SDL_SCANCODE_RIGHT)) {
                         current_modulo += 1;
                     }
+                    if (event.key.keysym.scancode == r.sdl.SDL_SCANCODE_E) {
+                        const export_title_buf = try allocator.allocSentinel(u8, 256, 0);
+                        defer allocator.free(export_title_buf);
+
+                        const export_title = try std.fmt.bufPrint(
+                            export_title_buf,
+                            "assets/screenshots/km-o{}m{}{s}.jpg",
+                            .{
+                                current_matrix,
+                                kr.moduli_list[current_modulo],
+                                clrs.current_color_scheme.name,
+                            },
+                        );
+
+                        export_title_buf[export_title.len] = 0;
+
+                        const export_title_z: [:0]const u8 = export_title_buf[0..export_title.len :0];
+
+                        try r.export_screen(export_title_z, kr.matrices[current_matrix], current_matrix, current_modulo);
+                    }
                 },
                 r.sdl.SDL_WINDOWEVENT => {
                     if (event.window.event == r.sdl.SDL_WINDOWEVENT_SIZE_CHANGED) {

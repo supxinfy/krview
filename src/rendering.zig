@@ -6,6 +6,7 @@ const Color = colortype.Color;
 pub const sdl = @cImport({
     @cInclude("SDL2/SDL.h");
     @cInclude("SDL2/SDL_ttf.h");
+    @cInclude("SDL2/SDL_Image.h");
 });
 
 pub var WINDOW_WIDTH: c_int = 800;
@@ -148,6 +149,7 @@ pub fn render_helping_screen(renderer: *sdl.SDL_Renderer, font: *sdl.TTF_Font) !
         "Schemes Available: Gogin, Gray-scale, Logarithmic,",
         "Viridis, Plasma, Inferno, Magma",
         "- H or SPACE: Toggle Help Screen",
+        "- E: Export Current Screen as JPG",
         "- Q: Quit Application",
     };
     var line_y: i32 = 0;
@@ -217,4 +219,69 @@ pub fn createWindow() ?*sdl.SDL_Window {
 
 pub fn FPSdelay() void {
     sdl.SDL_Delay(1000 / FPS);
+}
+
+pub fn export_screen(title: [*c]const u8, matrix: [kr.number_of_matrices][kr.number_of_matrices][kr.moduli]i32, idx: usize, modulo: usize) !void {
+    // Quality factor for better resolution. Will be possible to set by user later.
+    const quality_factor = 3;
+
+    const cellSizeW = @as(i32, @intCast(@as(usize, @intCast(WINDOW_WIDTH)) / (idx)));
+    const cellSizeH = @as(i32, @intCast((@as(usize, @intCast(WINDOW_HEIGHT)) - OFFSET) / (idx)));
+    const cellSize = quality_factor * @min(cellSizeW, cellSizeH);
+
+    const w = cellSize * @as(i32, @intCast(idx));
+    const h = cellSize * @as(i32, @intCast(idx));
+
+    const surface = sdl.SDL_CreateRGBSurfaceWithFormat(
+        0,
+        w,
+        h,
+        32,
+        sdl.SDL_PIXELFORMAT_RGBA32,
+    );
+    defer sdl.SDL_FreeSurface(surface);
+
+    if (surface == null)
+        return error.SurfaceCreationFailed;
+
+    // Fill background (optional)
+    const bg = sdl.SDL_MapRGBA(
+        surface.*.format,
+        background.r,
+        background.g,
+        background.b,
+        background.a,
+    );
+    _ = sdl.SDL_FillRect(surface, null, bg);
+
+    for (0..idx) |i| {
+        for (0..idx) |j| {
+            const color = clrs.colorScheme(
+                matrix[i][j][modulo],
+                kr.moduli_list[modulo],
+            );
+
+            const pixel = sdl.SDL_MapRGBA(
+                surface.*.format,
+                color.r,
+                color.g,
+                color.b,
+                color.a,
+            );
+
+            const rect = make_rect(
+                @as(i32, @intCast(i)) * cellSize,
+                @as(i32, @intCast(j)) * cellSize,
+                cellSize,
+                cellSize,
+            );
+
+            _ = sdl.SDL_FillRect(surface, &rect, pixel);
+        }
+    }
+
+    if (sdl.IMG_SaveJPG(surface, title, 100) != 0) {
+        sdl.SDL_Log("Failed to save image: %s", sdl.SDL_GetError());
+        return error.ImageSaveFailed;
+    }
 }

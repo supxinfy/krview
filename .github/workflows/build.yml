@@ -40,18 +40,18 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libsdl2-dev libsdl2-ttf-dev
+          sudo apt-get install -y libsdl2-dev libsdl2-ttf-dev libsdl2-image-dev
 
       - name: Install SDL (macOS)
         if: matrix.os == 'macos-latest'
         run: |
           brew update
-          brew install sdl2 sdl2_ttf
+          brew install sdl2 sdl2_ttf sdl2_image
 
       - name: Install SDL (Windows)
         if: matrix.os == 'windows-latest'
         run: |
-          vcpkg install sdl2 sdl2-ttf
+          vcpkg install sdl2 sdl2-ttf sdl2-image
           $env:VCPKG_ROOT = "C:\vcpkg"
           $env:VCPKG_DEFAULT_TRIPLET = "x64-windows"
           echo "C_INCLUDE_PATH=$env:VCPKG_ROOT\installed\x64-windows\include" | Out-File -Append -FilePath $env:GITHUB_ENV
@@ -81,12 +81,15 @@ jobs:
         shell: pwsh
         run: |
           mkdir -p krview\assets\fonts
+          mkdir -p krview\assets\screenshots
 
           Copy-Item zig-out\bin\krview.exe krview\
 
           $deps = @(
             "SDL2.dll",
             "SDL2_ttf.dll",
+            "SDL2_image.dll",
+            "libjpeg-9.dll",
             "freetype.dll",
             "zlib1.dll",
             "libpng16.dll",
@@ -111,6 +114,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p krview/assets/fonts
+          mkdir -p krview/assets/screenshots
 
           cp zig-out/bin/krview krview/
           cp assets/fonts/Terminus.ttf krview/assets/fonts/
@@ -125,6 +129,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p krview/assets/fonts
+          mkdir -p krview/assets/screenshots
 
           cp zig-out/bin/krview krview/
           cp assets/fonts/Terminus.ttf krview/assets/fonts/
