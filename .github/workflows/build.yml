@@ -61,7 +61,7 @@ jobs:
       - name: Build (Windows)
         if: matrix.os == 'windows-latest'
         run: |
-          zig build -Doptimize=ReleaseFast
+          zig build -Doptimize=ReleaseFast -L C:\vcpkg\installed\x64-windows\lib
         shell: pwsh
         env:
           ZIG_VERSION: 0.15.2
