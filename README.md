@@ -1,8 +1,8 @@
 # krview
 
-Kravchuk (or Krawtchouk if you prefer French spelling) matrix viewer visualizes Kravchuk matrices modulo prime numbers. Note that Kravchuk matrices are sometimes called MacWilliams matrices [[1](#references)], [[3](#references)].
+Kravchuk (or Krawtchouk if you prefer spelling from the original paper [[4](#references)]) matrix viewer visualizes Kravchuk matrices modulo prime numbers. Note that Kravchuk matrices are sometimes called MacWilliams matrices [[1](#references)], [[3](#references)].
 
-This project is inspired by quite old Wolfram Mathematica notebook [[3](#references)]. As a reference one can use [[1](#references)] or [[2](#references)].
+This project is inspired by a quite old Wolfram Mathematica notebook [[3](#references)]. As a reference one can use [[1](#references)] or [[2](#references)].
 
 ## Example
 
@@ -127,3 +127,5 @@ Terminus Font is licensed under the [SIL Open Font License](https://openfontlice
 2. Philip Feinsilver and Jerzy Kocik. Krawtchouk polynomials and Krawtchouk matrices, Recent Advances in Applied Probability, Springer-Verlag, 2004.
 
 3. N. Gogin, MacWilliams matrix, Mathematica notebook, MathSource, Wolfram Research, 2004. Available at the Wolfram Library Archive: https://library.wolfram.com/infocenter/MathSource/5223/
+
+4. Mykhailo Kravchuk. Sur une généralisation des polynomes d'Hermite, Comptes Rendus Mathématique (in French), 189: 620–622, JFM [55.0799.01](https://zbmath.org/?format=complete&q=an:55.0799.01), 1929.
