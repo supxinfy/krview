@@ -23,11 +23,11 @@ pub fn build(b: *std.Build) void {
         exe.addLibraryPath(b.path(sdl_root ++ "/lib"));
         exe.linkSystemLibrary("SDL2");
         exe.linkSystemLibrary("SDL2_ttf");
-        exe.linkSystemLibrary("SDL2_Image");
+        exe.linkSystemLibrary("SDL2_image");
     } else {
         exe.linkSystemLibrary("SDL2");
         exe.linkSystemLibrary("SDL2_ttf");
-        exe.linkSystemLibrary("SDL2_Image");
+        exe.linkSystemLibrary("SDL2_image");
     }
 
     exe.linkLibC();
