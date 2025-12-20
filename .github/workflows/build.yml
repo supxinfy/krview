@@ -82,10 +82,7 @@ jobs:
       - name: Build (Windows)
         if: matrix.os == 'windows-latest'
         run: |
-          zig build -Doptimize=ReleaseFast `
-            --search-prefix "C:\vcpkg\installed\x64-windows\lib" `
-            --search-prefix "C:\vcpkg\installed\x64-windows\bin" `
-            --search-prefix "C:\vcpkg\installed\x64-windows\include"
+          zig build -Doptimize=ReleaseFast --search-prefix "C:\vcpkg\installed\x64-windows\lib" --search-prefix "C:\vcpkg\installed\x64-windows\include"
         shell: pwsh
         env:
           ZIG_VERSION: 0.15.2
