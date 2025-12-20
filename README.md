@@ -2,7 +2,11 @@
 
 Kravchuk (or Krawtchouk if you prefer spelling from the original paper [[4](#references)]) matrix viewer visualizes Kravchuk matrices modulo prime numbers. Note that Kravchuk matrices are sometimes called MacWilliams matrices [[1](#references)], [[3](#references)].
 
-This project is inspired by a quite old Wolfram Mathematica notebook [[3](#references)]. As a reference one can use [[1](#references)] or [[2](#references)].
+These matrices emerge in the field of coding theory and are used in numerous applications, however, it is not known how they behave modulo a prime number. Thus visualization is created to present this finite-automata-like phenomenon. Binomial coefficients are closely related to these matrices (in fact, they are included in them) and similar phenomenon for them is described by well-known theorem in Number Theory, namely, [Lucas's theorem](https://en.wikipedia.org/wiki/Lucas%27s_theorem). Similar patterns appear in cellular automata, Pascal’s triangle modulo primes, and other discrete dynamical systems.
+
+*In short:* this application lets you explore surprising self-similar and automaton-like patterns that appear in Kravchuk matrices when computed modulo primes.
+
+This project is inspired by a quite old Wolfram Mathematica notebook [[3](#references)]. As a reference of the theory one can use [[1](#references)] or [[2](#references)].
 
 ## Example
 
@@ -50,15 +54,25 @@ Here is an example of the Kravchuk matrix viewer in action:
 
 ### Keybinds
 
+| Key | Action |
+|----|-------|
+| Q | Quit |
+| C | Change color scheme |
+| W/S | Change order |
+| A/D | Change modulo |
+| E | Export image |
+
+Or more detailed:
+
 - `Q` exits the application
 - `C` changes color scheme
 - `W` and `S` or `UP` and `DOWN` change the order
 - `A` and `D` or `LEFT` and `RIGHT` change the modulo
 - `SHIFT` increases speed of change
 - `H` or `SPACE` toggles helping screen
-- `E` exports the screen into a .jpg image and saves into assets/screenshots
+- `E` exports the current matrix view as a .jpg image and saves it into assets/screenshots
 
-Note that size of the image depends on size of the window.
+Note that the size of the image depends on size of the window.
 
 ## Installation
 
@@ -79,7 +93,7 @@ Install dependencies using Homebrew:
 - Install SDL:
 
 ```sh
-brew install sdl2 sdl_ttf
+brew install sdl2 sdl_ttf sdl2_image
 ```
 
 - Install Zig:
@@ -90,7 +104,7 @@ brew install zig
 
 Install dependencies using your package manager. For example, on Ubuntu:
 ```sh
-sudo apt-get install libsdl2-dev libsdl2-ttf-dev zig
+sudo apt-get install libsdl2-dev libsdl2-ttf-dev libsdl2-image-dev zig
 ```
 
 This project is actively maintained and tested on Zig 0.15+. See releases for tagged versions.
