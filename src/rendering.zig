@@ -213,10 +213,6 @@ pub fn render_helping_screen(renderer: *sdl.SDL_Renderer, font: *sdl.TTF_Font) !
     sdl.SDL_RenderPresent(renderer);
 }
 
-pub fn createWindow() ?*sdl.SDL_Window {
-    return sdl.SDL_CreateWindow("Krawtchouk Matrices", 0, 0, @as(c_int, @intCast(WINDOW_WIDTH)), @as(c_int, @intCast(WINDOW_HEIGHT)), sdl.SDL_WINDOW_RESIZABLE);
-}
-
 pub fn FPSdelay() void {
     sdl.SDL_Delay(1000 / FPS);
 }

@@ -25,10 +25,12 @@ pub fn build(b: *std.Build) void {
         exe.linkSystemLibrary("SDL2");
         exe.linkSystemLibrary("SDL2_ttf");
         exe.linkSystemLibrary("SDL2_image");
+        exe.linkLibC();
     } else {
         exe.linkSystemLibrary("SDL2");
         exe.linkSystemLibrary("SDL2_ttf");
         exe.linkSystemLibrary("SDL2_image");
+        exe.linkLibC();
     }
 
     exe.linkLibC();

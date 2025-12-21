@@ -21,14 +21,12 @@ pub fn main() !void {
     }
     defer r.sdl.SDL_Quit();
 
-    const window: ?*r.sdl.SDL_Window = r.createWindow() orelse {
+    const window: *r.sdl.SDL_Window = r.sdl.SDL_CreateWindow("Krawtchouk Matrices", 0, 0, @as(c_int, @intCast(r.WINDOW_WIDTH)), @as(c_int, @intCast(r.WINDOW_HEIGHT)), r.sdl.SDL_WINDOW_RESIZABLE) orelse {
         r.sdl.SDL_Log("Unable to initialize SDL: %s", r.sdl.SDL_GetError());
         return error.SDLInitializationFailed;
     };
 
-    if (window) |w| {
-        _ = r.sdl.SDL_SetWindowMinimumSize(w, MIN_W, MIN_H);
-    }
+    _ = r.sdl.SDL_SetWindowMinimumSize(window, MIN_W, MIN_H);
     defer r.sdl.SDL_DestroyWindow(window);
 
     const renderer = r.sdl.SDL_CreateRenderer(window, -1, r.sdl.SDL_RENDERER_ACCELERATED) orelse {
