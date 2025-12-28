@@ -75,58 +75,85 @@ pub fn main() !void {
 
         var event: r.sdl.SDL_Event = undefined;
         while (r.sdl.SDL_PollEvent(&event) != 0) {
-            update = true;
-            switch (event.type) {
+            var sc: r.sdl.SDL_Scancode = 0;
+            var window_event: r.sdl.SDL_WindowEvent = r.sdl.SDL_WindowEvent{
+                .type = 0,
+            };
+
+            event_state: switch (event.type) {
                 r.sdl.SDL_QUIT => {
                     quit = true;
                 },
                 r.sdl.SDL_KEYDOWN => {
-                    if (event.key.keysym.scancode == r.sdl.SDL_SCANCODE_Q or event.key.keysym.scancode == r.sdl.SDL_SCANCODE_ESCAPE) {
-                        quit = true;
-                    }
-                    if (event.key.keysym.scancode == r.sdl.SDL_SCANCODE_H or event.key.keysym.scancode == r.sdl.SDL_SCANCODE_SPACE) {
-                        helping_screen = !helping_screen;
-                    }
-                    if (event.key.keysym.scancode == r.sdl.SDL_SCANCODE_C) {
-                        clrs.current_color_scheme.name = clrs.nextColorScheme(clrs.current_color_scheme.name);
-                    }
-                    if (current_matrix + 1 < kr.number_of_matrices and (event.key.keysym.scancode == r.sdl.SDL_SCANCODE_W or event.key.keysym.scancode == r.sdl.SDL_SCANCODE_UP)) {
-                        current_matrix += 1;
-                    }
-                    if (current_matrix > 1 and (event.key.keysym.scancode == r.sdl.SDL_SCANCODE_S or event.key.keysym.scancode == r.sdl.SDL_SCANCODE_DOWN)) {
-                        current_matrix -= 1;
-                    }
-                    if (current_modulo > 0 and (event.key.keysym.scancode == r.sdl.SDL_SCANCODE_A or event.key.keysym.scancode == r.sdl.SDL_SCANCODE_LEFT)) {
-                        current_modulo -= 1;
-                    }
-                    if (current_modulo + 1 < kr.moduli and (event.key.keysym.scancode == r.sdl.SDL_SCANCODE_D or event.key.keysym.scancode == r.sdl.SDL_SCANCODE_RIGHT)) {
-                        current_modulo += 1;
-                    }
-                    if (event.key.keysym.scancode == r.sdl.SDL_SCANCODE_E) {
-                        const export_title_buf = try allocator.allocSentinel(u8, 256, 0);
-                        defer allocator.free(export_title_buf);
+                    sc = event.key.keysym.scancode;
+                    update = true;
+                    switch (sc) {
+                        r.sdl.SDL_SCANCODE_Q, r.sdl.SDL_SCANCODE_ESCAPE => {
+                            quit = true;
+                            break :event_state;
+                        },
+                        r.sdl.SDL_SCANCODE_H, r.sdl.SDL_SCANCODE_SPACE => {
+                            helping_screen = !helping_screen;
+                        },
+                        r.sdl.SDL_SCANCODE_C => {
+                            clrs.current_color_scheme.name = clrs.nextColorScheme(clrs.current_color_scheme.name);
+                        },
+                        r.sdl.SDL_SCANCODE_W, r.sdl.SDL_SCANCODE_UP => {
+                            if (current_matrix + 1 < kr.number_of_matrices) {
+                                current_matrix += 1;
+                            }
+                        },
+                        r.sdl.SDL_SCANCODE_S, r.sdl.SDL_SCANCODE_DOWN => {
+                            if (current_matrix > 1) {
+                                current_matrix -= 1;
+                            }
+                        },
+                        r.sdl.SDL_SCANCODE_A, r.sdl.SDL_SCANCODE_LEFT => {
+                            if (current_modulo > 0) {
+                                current_modulo -= 1;
+                            }
+                        },
+                        r.sdl.SDL_SCANCODE_D, r.sdl.SDL_SCANCODE_RIGHT => {
+                            if (current_modulo + 1 < kr.moduli) {
+                                current_modulo += 1;
+                            }
+                        },
+                        r.sdl.SDL_SCANCODE_E => {
+                            const export_title_buf = try allocator.allocSentinel(u8, 256, 0);
+                            defer allocator.free(export_title_buf);
 
-                        const export_title = try std.fmt.bufPrint(
-                            export_title_buf,
-                            "assets/screenshots/km-o{}m{}{s}.jpg",
-                            .{
-                                current_matrix,
-                                kr.moduli_list[current_modulo],
-                                clrs.current_color_scheme.name,
-                            },
-                        );
+                            const export_title = try std.fmt.bufPrint(
+                                export_title_buf,
+                                "assets/screenshots/km-o{}m{}{s}.jpg",
+                                .{
+                                    current_matrix,
+                                    kr.moduli_list[current_modulo],
+                                    clrs.current_color_scheme.name,
+                                },
+                            );
+                            export_title_buf[export_title.len] = 0;
 
-                        export_title_buf[export_title.len] = 0;
+                            const export_title_z: [:0]const u8 = export_title_buf[0..export_title.len :0];
 
-                        const export_title_z: [:0]const u8 = export_title_buf[0..export_title.len :0];
-
-                        try r.export_screen(export_title_z, kr.matrices[current_matrix], current_matrix, current_modulo);
+                            try r.export_screen(export_title_z, kr.matrices[current_matrix], current_matrix, current_modulo);
+                        },
+                        else => {},
                     }
                 },
                 r.sdl.SDL_WINDOWEVENT => {
-                    if (event.window.event == r.sdl.SDL_WINDOWEVENT_SIZE_CHANGED) {
-                        r.WINDOW_WIDTH = @as(c_int, @intCast(event.window.data1));
-                        r.WINDOW_HEIGHT = @as(c_int, @intCast(event.window.data2));
+                    window_event = event.window;
+                    switch (window_event.event) {
+                        r.sdl.SDL_WINDOWEVENT_CLOSE => {
+                            quit = true;
+                            break :event_state;
+                        },
+                        r.sdl.SDL_WINDOWEVENT_SIZE_CHANGED => {
+                            r.WINDOW_WIDTH = @as(c_int, @intCast(window_event.data1));
+                            r.WINDOW_HEIGHT = @as(c_int, @intCast(window_event.data2));
+                            update = true;
+                            break :event_state;
+                        },
+                        else => {},
                     }
                 },
                 else => {},
