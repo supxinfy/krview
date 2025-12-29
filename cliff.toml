@@ -1,0 +1,27 @@
+[git]
+conventional_commits = false
+filter_unconventional = false
+sort_commits = "oldest"
+tag-prefix = ""
+
+[changelog]
+trim = false
+
+[parser]
+tag = "glob:v*"
+
+[[parser.conventional]]
+match = "^fix"
+group = "🐛 Bug Fixes"
+
+[[parser.conventional]]
+match = "^feat"
+group = "✨ Features"
+
+[[parser.conventional]]
+match = "^update"
+group = "🔧 Updates"
+
+[[parser.conventional]]
+match = ".*"
+group = "💼 Other"
