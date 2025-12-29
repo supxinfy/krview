@@ -88,6 +88,9 @@ pub fn main() !void {
                     sc = event.key.keysym.scancode;
                     update = true;
                     switch (sc) {
+                        r.sdl.SDL_SCANCODE_LSHIFT, r.sdl.SDL_SCANCODE_RSHIFT => {
+                            break :event_state;
+                        },
                         r.sdl.SDL_SCANCODE_Q, r.sdl.SDL_SCANCODE_ESCAPE => {
                             quit = true;
                             break :event_state;
