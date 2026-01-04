@@ -62,6 +62,37 @@ pub fn args_parser(args: *std.process.ArgIterator) !bool {
                     },
                 };
             }
+            var m_idx: i32 = -1;
+            for (kr.moduli_list, 0..) |mod, idx| {
+                if (mod == m_val) {
+                    m_idx = @as(i32, @intCast(idx));
+                }
+            }
+
+            if (m_idx == -1) {
+                try log("(Console) Specified modulo is not supported.");
+                return error.InvalidModulo;
+            }
+
+            try kr.calculate_data();
+
+            const export_title_buf = try allocator.allocSentinel(u8, 256, 0);
+            defer allocator.free(export_title_buf);
+
+            const export_title = try std.fmt.bufPrint(
+                export_title_buf,
+                "assets/screenshots/km-o{}m{}{s}.jpg",
+                .{
+                    n_val,
+                    m_val,
+                    clrs.current_color_scheme.name,
+                },
+            );
+            export_title_buf[export_title.len] = 0;
+
+            const export_title_z: [:0]const u8 = export_title_buf[0..export_title.len :0];
+
+            try r.export_screen(export_title_z, kr.matrices[n_val], n_val, @as(usize, @intCast(m_idx)));
             return true;
         }
     }
