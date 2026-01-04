@@ -16,6 +16,10 @@ pub fn build(b: *std.Build) void {
         .root_module = root_module,
     });
 
+    // Link zeit library
+    const zeit_dep = b.dependency("zeit", .{});
+    exe.root_module.addImport("zeit", zeit_dep.module("zeit"));
+
     // Link SDL2 libraries
     if (target.query.os_tag == .windows) {
         const sdl_root = "C:/vcpkg/installed/x64-windows";

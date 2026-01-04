@@ -276,7 +276,7 @@ pub fn export_screen(title: [*c]const u8, matrix: [kr.number_of_matrices][kr.num
         }
     }
 
-    if (sdl.IMG_SaveJPG(surface, title, 100) != 0) {
+    if (sdl.IMG_SavePNG(surface, title) != 0) {
         sdl.SDL_Log("Failed to save image: %s", sdl.SDL_GetError());
         return error.ImageSaveFailed;
     }

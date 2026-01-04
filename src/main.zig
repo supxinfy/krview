@@ -3,6 +3,7 @@ const math = @import("std").math;
 const r = @import("rendering.zig");
 const kr = @import("krawtchouk.zig");
 const clrs = @import("colorshemes.zig");
+const log = @import("logging.zig");
 
 var current_matrix: usize = 1;
 var current_modulo: usize = 0;
@@ -11,6 +12,22 @@ const MIN_W = 400;
 const MIN_H = 400;
 
 pub fn main() !void {
+    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    defer arena.deinit();
+    const arena_allocator = arena.allocator();
+
+    var args = try std.process.argsWithAllocator(arena_allocator);
+    defer args.deinit();
+
+    _ = args.next(); // skip program name
+
+    try log.start_logging();
+
+    const is_handled: bool = try log.args_parser(&args);
+    if (is_handled) {
+        return;
+    }
+
     _ = r.sdl.SDL_SetHint(r.sdl.SDL_HINT_RENDER_SCALE_QUALITY, "0");
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     const allocator = gpa.allocator();
@@ -198,4 +215,6 @@ pub fn main() !void {
 
         r.FPSdelay();
     }
+
+    try log.stop_logging();
 }
