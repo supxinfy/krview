@@ -94,6 +94,9 @@ pub fn args_parser(args: *std.process.ArgIterator) !bool {
 
             try r.export_screen(export_title_z, kr.matrices[n_val], n_val, @as(usize, @intCast(m_idx)));
             return true;
+        } else {
+            try log("(Console) Ignore an unknown argument...");
+            return true;
         }
     }
     return false;
@@ -171,7 +174,7 @@ pub fn log(message: []const u8) !void {
 
     const timestamp = try std.fmt.bufPrint(
         log_title,
-        "{}{}{}",
+        "{}:{}:{}",
         .{
             dt.hour,
             dt.minute,

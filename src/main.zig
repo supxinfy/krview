@@ -23,12 +23,22 @@ pub fn main() !void {
 
     try log.start_logging();
 
-    const is_handled: bool = try log.args_parser(&args);
+    const is_handled: bool = log.args_parser(&args) catch |err| switch (err) {
+        error.MatrixOrderOverflow, error.ModuloOverflow => {
+            std.debug.print("Overflow... Abort. \n", .{});
+            return;
+        },
+        else => {
+            std.debug.print("Args are incorrect... See --help for reference\n", .{});
+            return;
+        },
+    };
     if (is_handled) {
         return;
     }
 
     _ = r.sdl.SDL_SetHint(r.sdl.SDL_HINT_RENDER_SCALE_QUALITY, "0");
+    try log.log("SDL_HINT_RENDER_SCALE_QUALITY set to 0 (nearest pixel sampling).");
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     const allocator = gpa.allocator();
 
@@ -38,37 +48,46 @@ pub fn main() !void {
     }
     defer r.sdl.SDL_Quit();
 
+    try log.log("SDL initialized successfully.");
+
     const window: *r.sdl.SDL_Window = r.sdl.SDL_CreateWindow("Krawtchouk Matrices", 0, 0, @as(c_int, @intCast(r.WINDOW_WIDTH)), @as(c_int, @intCast(r.WINDOW_HEIGHT)), r.sdl.SDL_WINDOW_RESIZABLE) orelse {
         r.sdl.SDL_Log("Unable to initialize SDL: %s", r.sdl.SDL_GetError());
         return error.SDLInitializationFailed;
     };
+    try log.log("SDL window created successfully.");
 
     _ = r.sdl.SDL_SetWindowMinimumSize(window, MIN_W, MIN_H);
     defer r.sdl.SDL_DestroyWindow(window);
+    try log.log("SDL window minimum size set.");
 
     const renderer = r.sdl.SDL_CreateRenderer(window, -1, r.sdl.SDL_RENDERER_ACCELERATED) orelse {
         r.sdl.SDL_Log("Unable to initialize SDL: %s", r.sdl.SDL_GetError());
         return error.SDLInitializationFailed;
     };
     defer r.sdl.SDL_DestroyRenderer(renderer);
+    try log.log("SDL renderer created successfully.");
 
     if (r.sdl.TTF_Init() < 0) {
         r.sdl.SDL_Log("Unable to initialize sdl: %s", r.sdl.SDL_GetError());
         return error.sdlInitializationFailed;
     }
     defer r.sdl.TTF_Quit();
+    try log.log("SDL TTF initialized successfully.");
 
     const font = r.sdl.TTF_OpenFont("assets/fonts/Terminus.ttf", 24) orelse {
         r.sdl.SDL_Log("Unable to load font: %s", r.sdl.SDL_GetError());
         return error.sdlFontNotFound;
     };
     defer r.sdl.TTF_CloseFont(font);
+    try log.log("Font loaded successfully.");
 
     r.render_loading_screen(renderer, font) catch |err| {
         return err;
     };
+    try log.log("Loading screen rendered successfully.");
     r.sdl.SDL_Delay(16);
     try kr.calculate_data();
+    try log.log("Krawtchouk matrices calculated successfully.");
 
     var quit: bool = false;
     var update: bool = true;
@@ -96,14 +115,13 @@ pub fn main() !void {
             var window_event: r.sdl.SDL_WindowEvent = r.sdl.SDL_WindowEvent{
                 .type = 0,
             };
-
+            update = true;
             event_state: switch (event.type) {
                 r.sdl.SDL_QUIT => {
                     quit = true;
                 },
                 r.sdl.SDL_KEYDOWN => {
                     sc = event.key.keysym.scancode;
-                    update = true;
                     switch (sc) {
                         r.sdl.SDL_SCANCODE_LSHIFT, r.sdl.SDL_SCANCODE_RSHIFT => {
                             break :event_state;
