@@ -133,7 +133,6 @@ pub fn start_logging() !void {
             return err;
         }
     };
-    var log_dir = try std.fs.cwd().openDir("logs", .{});
 
     const log_title = try allocator.alloc(u8, 256);
     defer allocator.free(log_title);
@@ -156,7 +155,6 @@ pub fn start_logging() !void {
         return err;
     };
     current_log_file = log_file;
-    log_dir.close();
 }
 
 pub fn log(message: []const u8) !void {

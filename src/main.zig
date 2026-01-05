@@ -89,6 +89,15 @@ pub fn main() !void {
     try kr.calculate_data();
     try log.log("Krawtchouk matrices calculated successfully.");
 
+    std.fs.cwd().makeDir("assets/screenshots") catch |err| {
+        if (err != error.PathAlreadyExists) {
+            try log.log("assets/screenshots can not be found.");
+            return err;
+        } else {
+            try log.log("assets/screenshots exists...");
+        }
+    };
+
     var quit: bool = false;
     var update: bool = true;
     var helping_screen: bool = true;
