@@ -86,7 +86,7 @@ pub fn main() !void {
     };
     try log.log("Loading screen rendered successfully.");
     r.sdl.SDL_Delay(16);
-    try kr.calculate_data();
+    try kr.calculate_data(allocator);
     try log.log("Krawtchouk matrices calculated successfully.");
 
     std.fs.cwd().makeDir("assets/screenshots") catch |err| {
@@ -182,7 +182,7 @@ pub fn main() !void {
 
                             const export_title_z: [:0]const u8 = export_title_buf[0..export_title.len :0];
 
-                            try r.export_screen(export_title_z, kr.matrices[current_matrix], current_matrix, current_modulo);
+                            try r.export_screen(export_title_z, kr.moduliList[current_modulo].items[current_matrix], current_matrix, current_modulo);
                         },
                         else => {},
                     }
@@ -234,7 +234,7 @@ pub fn main() !void {
             r.FPSdelay();
             continue;
         } else {
-            r.render(renderer, font, @as([*c]const u8, @ptrCast(order_str)), @as([*c]const u8, @ptrCast(modulo_str)), kr.matrices[current_matrix], current_matrix, current_modulo) catch |err| {
+            r.render(renderer, font, @as([*c]const u8, @ptrCast(order_str)), @as([*c]const u8, @ptrCast(modulo_str)), kr.moduliList[current_modulo].items[current_matrix], current_matrix, current_modulo) catch |err| {
                 return err;
             };
         }

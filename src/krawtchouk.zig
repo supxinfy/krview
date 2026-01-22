@@ -1,4 +1,46 @@
 const std = @import("std");
+const DoublyLinkedList = std.DoublyLinkedList;
+const ArrayList = std.ArrayList;
+
+pub const KravchukMatrix = struct {
+    order: usize,
+    modulo: u32,
+    data: []i32,
+
+    pub fn create(allocator: std.mem.Allocator, order: usize, modulo: u32) !*KravchukMatrix {
+        const self = try allocator.create(KravchukMatrix);
+        const len = order * order;
+        const buf = try allocator.alloc(i32, len);
+
+        self.* = KravchukMatrix{
+            .order = order,
+            .modulo = modulo,
+            .data = buf,
+        };
+
+        for (0..len) |i| {
+            self.data[i] = 0;
+        }
+        return self;
+    }
+
+    pub fn destroy(allocator: std.mem.Allocator, self: *KravchukMatrix) void {
+        allocator.free(self.data);
+        allocator.destroy(self);
+    }
+
+    fn idx(self: *KravchukMatrix, i: usize, j: usize) usize {
+        return i * (self.order) + j;
+    }
+
+    pub fn set(self: *KravchukMatrix, i: usize, j: usize, value: i32) void {
+        self.data[self.idx(i, j)] = value;
+    }
+
+    pub fn get(self: *KravchukMatrix, i: usize, j: usize) i32 {
+        return self.data[self.idx(i, j)];
+    }
+};
 
 fn is_prime(comptime n: usize) bool {
     var idx: usize = 2;
@@ -34,66 +76,66 @@ pub const number_of_matrices = 300;
 pub const moduli = amount_of_primes(33);
 pub const moduli_list = prime_list(33, moduli);
 
-pub var matrices: [number_of_matrices][number_of_matrices][number_of_matrices][moduli]i32 = undefined;
+pub var moduliList: [moduli]ArrayList(*KravchukMatrix) = undefined;
 
-fn matrices_modulo(s: usize, i: usize, j: usize) void {
-    for (0..moduli) |k| {
-        matrices[s][i][j][k] = 0;
-        if (s == 0) {
-            matrices[s][0][0][k] = 1;
-        } else {
-            if (i < s and j < s) {
-                matrices[s][i][j][k] = matrices[s - 1][i][j][k];
-                if (i > 0 and j < s) {
-                    matrices[s][i][j][k] += matrices[s - 1][i - 1][j][k];
-                }
-                if (j > 0 and i < s) {
-                    matrices[s][i][j][k] += matrices[s - 1][i][j - 1][k];
-                }
-                if (i > 0 and j > 0) {
-                    matrices[s][i][j][k] -= matrices[s - 1][i - 1][j - 1][k];
-                }
-                if (i >= 1 and i <= s - 2 and s > 2) {
-                    matrices[s][i][j][k] *= @as(i32, @intCast((moduli_list[k] + 1) >> 1));
-                }
-
-                matrices[s][i][j][k] = @mod(matrices[s][i][j][k], @as(i32, @intCast(moduli_list[k])));
-            }
+pub fn clearArrays(allocator: std.mem.Allocator) void {
+    for (&moduliList) |*al| {
+        for (al.items) |m| {
+            KravchukMatrix.destroy(allocator, m);
         }
+        _ = al.deinit(allocator);
     }
 }
 
-fn calculate_row(s: usize, i: usize) void {
+fn calculate_row(s: usize, i: usize, modulo: usize, prev_item: *KravchukMatrix, new_item: *KravchukMatrix) !void {
     for (0..s + 1) |j| {
-        matrices_modulo(s, i, j);
-    }
-}
-
-fn calculate_matrix(s: usize) !void {
-    const cpus = try std.Thread.getCpuCount();
-
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
-
-    var pool: std.Thread.Pool = undefined;
-    try pool.init(.{ .allocator = allocator });
-    defer pool.deinit();
-
-    if (s < cpus) {
-        for (0..s + 1) |i| {
-            calculate_row(s, i);
+        var v: i32 = if (i < s and j < s) prev_item.*.get(i, j) else 0;
+        if (i > 0 and j < s) v += prev_item.*.get(i - 1, j);
+        if (i < s and j > 0) v += prev_item.*.get(i, j - 1);
+        if (i > 0 and j > 0) v -= prev_item.*.get(i - 1, j - 1);
+        if (s >= 1 and j >= 1 and j < s) {
+            v *= @as(i32, @intCast((moduli_list[modulo] + 1) >> 1));
         }
-        return;
-    }
-
-    for (0..s + 1) |i| {
-        try pool.spawn(calculate_row, .{ s, i });
+        v = @mod(v, @as(i32, @intCast(moduli_list[modulo])));
+        new_item.*.set(i, j, v);
     }
 }
 
-pub fn calculate_data() !void {
+fn wrap_calculate_row(s: usize, i: usize, modulo: usize, prev_item: *KravchukMatrix, new_item: *KravchukMatrix) void {
+    calculate_row(s, i, modulo, prev_item, new_item) catch {
+        return;
+    };
+}
+
+fn calculate_matrix(allocator: std.mem.Allocator, s: usize) !void {
+    for (&moduliList, 0..) |*kr, idx| {
+        const cur_modulo = @as(u32, @intCast(idx));
+
+        if (s == 0) {
+            var orderOne = try KravchukMatrix.create(allocator, 1, cur_modulo);
+            orderOne.set(0, 0, 1);
+            try kr.append(allocator, orderOne);
+        } else {
+            // const cpus = try std.Thread.getCpuCount();
+
+            const prev_item = kr.items[kr.items.len - 1];
+            const new_item = try KravchukMatrix.create(allocator, s + 1, cur_modulo);
+
+            var pool: std.Thread.Pool = undefined;
+            try pool.init(.{ .allocator = allocator });
+            defer pool.deinit();
+
+            for (0..s + 1) |i| {
+                try pool.spawn(wrap_calculate_row, .{ s, i, idx, prev_item, new_item });
+            }
+
+            try kr.append(allocator, new_item);
+        }
+    }
+}
+
+pub fn calculate_data(allocator: std.mem.Allocator) !void {
     for (0..number_of_matrices) |s| {
-        try calculate_matrix(s);
+        try calculate_matrix(allocator, s);
     }
 }

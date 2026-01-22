@@ -69,12 +69,12 @@ pub fn args_parser(args: *std.process.ArgIterator) !bool {
                 }
             }
 
-            if (m_idx == -1) {
+            if (m_idx <= -1) {
                 try log("(Console) Specified modulo is not supported.");
                 return error.InvalidModulo;
             }
 
-            try kr.calculate_data();
+            try kr.calculate_data(allocator);
 
             const export_title_buf = try allocator.allocSentinel(u8, 256, 0);
             defer allocator.free(export_title_buf);
@@ -92,7 +92,7 @@ pub fn args_parser(args: *std.process.ArgIterator) !bool {
 
             const export_title_z: [:0]const u8 = export_title_buf[0..export_title.len :0];
 
-            try r.export_screen(export_title_z, kr.matrices[n_val], n_val, @as(usize, @intCast(m_idx)));
+            try r.export_screen(export_title_z, kr.moduliList[@as(usize, @intCast(m_idx))].items[@as(usize, @intCast(n_val))], n_val, @as(usize, @intCast(m_idx)));
             return true;
         } else {
             try log("(Console) Ignore an unknown argument...");

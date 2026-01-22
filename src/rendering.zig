@@ -43,7 +43,7 @@ fn tosdlcolor(color: colortype.Color) SDL_Color {
 const background = colortype.Color{ .r = 18, .g = 18, .b = 18, .a = 255 };
 const text_color = colortype.Color{ .r = 208, .g = 208, .b = 208, .a = 255 };
 
-pub fn render(renderer: *sdl.SDL_Renderer, font: *sdl.TTF_Font, order_str: [*c]const u8, modulo_str: [*c]const u8, matrix: [kr.number_of_matrices][kr.number_of_matrices][kr.moduli]i32, idx: usize, modulo: usize) !void {
+pub fn render(renderer: *sdl.SDL_Renderer, font: *sdl.TTF_Font, order_str: [*c]const u8, modulo_str: [*c]const u8, matrix: *kr.KravchukMatrix, idx: usize, modulo: usize) !void {
     _ = sdl.SDL_SetRenderDrawColor(renderer, background.r, background.g, background.b, background.a);
     _ = sdl.SDL_RenderClear(renderer);
 
@@ -93,7 +93,7 @@ pub fn render(renderer: *sdl.SDL_Renderer, font: *sdl.TTF_Font, order_str: [*c]c
         for (0..idx) |j| {
             const cellCoordX = @as(i32, @intCast(startX + @as(i32, @intCast(i)) * cellSize));
             const cellCoordY = @as(i32, @intCast(startY + @as(i32, @intCast(j)) * cellSize));
-            const color = clrs.colorScheme(matrix[i][j][modulo], kr.moduli_list[modulo]);
+            const color = clrs.colorScheme(matrix.get(i, j), kr.moduli_list[modulo]);
             _ = sdl.SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
             _ = sdl.SDL_RenderFillRect(renderer, &make_rect(cellCoordX, cellCoordY, cellSize, cellSize));
         }
@@ -217,7 +217,7 @@ pub fn FPSdelay() void {
     sdl.SDL_Delay(1000 / FPS);
 }
 
-pub fn export_screen(title: [*c]const u8, matrix: [kr.number_of_matrices][kr.number_of_matrices][kr.moduli]i32, idx: usize, modulo: usize) !void {
+pub fn export_screen(title: [*c]const u8, matrix: *kr.KravchukMatrix, idx: usize, modulo: usize) !void {
     // Quality factor for better resolution. Will be possible to set by user later.
     const quality_factor = 3;
 
@@ -253,7 +253,7 @@ pub fn export_screen(title: [*c]const u8, matrix: [kr.number_of_matrices][kr.num
     for (0..idx) |i| {
         for (0..idx) |j| {
             const color = clrs.colorScheme(
-                matrix[i][j][modulo],
+                matrix.get(i, j),
                 kr.moduli_list[modulo],
             );
 
