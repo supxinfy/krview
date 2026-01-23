@@ -119,9 +119,34 @@ pub fn render_loading_screen(renderer: *sdl.SDL_Renderer, font: *sdl.TTF_Font) !
     _ = sdl.SDL_SetRenderDrawColor(renderer, text_color.r, text_color.g, text_color.b, text_color.a);
 
     const srcrect_loading = make_rect(0, 0, loading_surface.*.w, loading_surface.*.h);
-    const dstrect_loading = make_rect(0, 0, loading_surface.*.w, loading_surface.*.h);
+    const dstrect_loading = make_rect((WINDOW_WIDTH - loading_surface.*.w) >> 1, (WINDOW_HEIGHT - loading_surface.*.h) >> 1, loading_surface.*.w, loading_surface.*.h);
     _ = sdl.SDL_RenderCopy(renderer, loading_texture, &srcrect_loading, &dstrect_loading);
 
+    sdl.SDL_RenderPresent(renderer);
+}
+
+pub fn render_loading_matrices(renderer: *sdl.SDL_Renderer, font: *sdl.TTF_Font) !void {
+    _ = sdl.SDL_RenderPresent(renderer);
+    const loading_surface = sdl.TTF_RenderText_Solid(font, "Loading...", tosdlcolor(text_color));
+    defer sdl.SDL_FreeSurface(loading_surface);
+
+    if (loading_surface == null) {
+        sdl.SDL_Log("Unable to initialize sdl: %s", sdl.SDL_GetError());
+        return error.sdlSurfaceNotFound;
+    }
+
+    _ = sdl.SDL_SetRenderDrawColor(renderer, 0, 0, 0, background.a);
+
+    _ = sdl.SDL_RenderFillRect(renderer, &make_rect((WINDOW_WIDTH - loading_surface.*.w) >> 1, (WINDOW_HEIGHT - loading_surface.*.h) >> 1, loading_surface.*.w, loading_surface.*.h));
+
+    const loading_texture = sdl.SDL_CreateTextureFromSurface(renderer, loading_surface);
+    defer sdl.SDL_DestroyTexture(loading_texture);
+
+    _ = sdl.SDL_SetRenderDrawColor(renderer, text_color.r, text_color.g, text_color.b, text_color.a);
+
+    const srcrect_loading = make_rect(0, 0, loading_surface.*.w, loading_surface.*.h);
+    const dstrect_loading = make_rect((WINDOW_WIDTH - loading_surface.*.w) >> 1, (WINDOW_HEIGHT - loading_surface.*.h) >> 1, loading_surface.*.w, loading_surface.*.h);
+    _ = sdl.SDL_RenderCopy(renderer, loading_texture, &srcrect_loading, &dstrect_loading);
     sdl.SDL_RenderPresent(renderer);
 }
 
@@ -218,15 +243,15 @@ pub fn FPSdelay() void {
 }
 
 pub fn export_screen(title: [*c]const u8, matrix: *kr.KravchukMatrix, idx: usize, modulo: usize) !void {
-    // Quality factor for better resolution. Will be possible to set by user later.
-    const quality_factor = 3;
-
+    const quality_factor = @as(i32, @intCast(3 + @divFloor(idx, 50)));
     const cellSizeW = @as(i32, @intCast(@as(usize, @intCast(WINDOW_WIDTH)) / (idx)));
     const cellSizeH = @as(i32, @intCast((@as(usize, @intCast(WINDOW_HEIGHT)) - OFFSET) / (idx)));
     const cellSize = quality_factor * @min(cellSizeW, cellSizeH);
 
     const w = cellSize * @as(i32, @intCast(idx));
     const h = cellSize * @as(i32, @intCast(idx));
+
+    _ = sdl.SDL_SetHint(sdl.SDL_HINT_RENDER_SCALE_QUALITY, "0");
 
     const surface = sdl.SDL_CreateRGBSurfaceWithFormat(
         0,

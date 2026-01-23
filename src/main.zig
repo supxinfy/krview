@@ -11,6 +11,8 @@ var current_modulo: usize = 0;
 const MIN_W = 400;
 const MIN_H = 400;
 
+const loading_constant = 2;
+
 pub fn main() !void {
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
@@ -29,7 +31,7 @@ pub fn main() !void {
             return;
         },
         else => {
-            std.debug.print("Args are incorrect... See --help for reference\n", .{});
+            std.debug.print("Args are incorrect... See --help for reference {}\n", .{err});
             return;
         },
     };
@@ -86,7 +88,7 @@ pub fn main() !void {
     };
     try log.log("Loading screen rendered successfully.");
     r.sdl.SDL_Delay(16);
-    try kr.calculate_data(allocator);
+    try kr.calculate_data(allocator, kr.number_of_matrices);
     try log.log("Krawtchouk matrices calculated successfully.");
 
     std.fs.cwd().makeDir("assets/screenshots") catch |err| {
@@ -146,7 +148,7 @@ pub fn main() !void {
                             clrs.current_color_scheme.name = clrs.nextColorScheme(clrs.current_color_scheme.name);
                         },
                         r.sdl.SDL_SCANCODE_W, r.sdl.SDL_SCANCODE_UP => {
-                            if (current_matrix + 1 < kr.number_of_matrices) {
+                            if (current_matrix + 1 < kr.number_of_calcmatrices) {
                                 current_matrix += 1;
                             }
                         },
@@ -171,7 +173,7 @@ pub fn main() !void {
 
                             const export_title = try std.fmt.bufPrint(
                                 export_title_buf,
-                                "assets/screenshots/km-o{}m{}{s}.jpg",
+                                "assets/screenshots/km-o{}m{}{s}.png",
                                 .{
                                     current_matrix,
                                     kr.moduli_list[current_modulo],
@@ -219,7 +221,7 @@ pub fn main() !void {
             current_matrix -= 1;
             update = true;
         }
-        if (current_matrix + 1 < kr.number_of_matrices and (keyboard[r.sdl.SDL_SCANCODE_LSHIFT] != 0 and (keyboard[r.sdl.SDL_SCANCODE_W] != 0 or keyboard[r.sdl.SDL_SCANCODE_UP] != 0))) {
+        if (current_matrix + 1 < kr.number_of_calcmatrices and (keyboard[r.sdl.SDL_SCANCODE_LSHIFT] != 0 and (keyboard[r.sdl.SDL_SCANCODE_W] != 0 or keyboard[r.sdl.SDL_SCANCODE_UP] != 0))) {
             current_matrix += 1;
             update = true;
         }
@@ -237,6 +239,10 @@ pub fn main() !void {
             r.render(renderer, font, @as([*c]const u8, @ptrCast(order_str)), @as([*c]const u8, @ptrCast(modulo_str)), kr.moduliList[current_modulo].items[current_matrix], current_matrix, current_modulo) catch |err| {
                 return err;
             };
+            if (kr.number_of_calcmatrices < current_matrix + loading_constant) {
+                try r.render_loading_matrices(renderer, font);
+                try kr.calculate_data(allocator, kr.number_of_calcmatrices + loading_constant * 2);
+            }
         }
         update = false;
 

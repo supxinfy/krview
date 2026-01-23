@@ -36,8 +36,8 @@ pub fn args_parser(args: *std.process.ArgIterator) !bool {
                         return error.MatrixOrderOverflow;
                     },
                 };
-
-                if (n_val == 0 or n_val > kr.number_of_matrices - 1) {
+                try kr.calculate_data(allocator, n_val);
+                if (n_val == 0 or n_val > kr.number_of_calcmatrices - 1) {
                     try log("(Console) Matrix order value out of bounds.");
                     return error.MatrixOrderValue;
                 }
@@ -74,14 +74,12 @@ pub fn args_parser(args: *std.process.ArgIterator) !bool {
                 return error.InvalidModulo;
             }
 
-            try kr.calculate_data(allocator);
-
             const export_title_buf = try allocator.allocSentinel(u8, 256, 0);
             defer allocator.free(export_title_buf);
 
             const export_title = try std.fmt.bufPrint(
                 export_title_buf,
-                "assets/screenshots/km-o{}m{}{s}.jpg",
+                "assets/screenshots/km-o{}m{}{s}.png",
                 .{
                     n_val,
                     m_val,

@@ -18,9 +18,9 @@ pub const KravchukMatrix = struct {
             .data = buf,
         };
 
-        for (0..len) |i| {
-            self.data[i] = 0;
-        }
+        // for (0..len) |i| {
+        //     self.data[i] = 0;
+        // }
         return self;
     }
 
@@ -72,7 +72,8 @@ fn prime_list(comptime n: u32, comptime len: u32) [len]u32 {
     return result;
 }
 
-pub const number_of_matrices = 300;
+pub const number_of_matrices = 50;
+pub var number_of_calcmatrices: u32 = 0;
 pub const moduli = amount_of_primes(33);
 pub const moduli_list = prime_list(33, moduli);
 
@@ -132,10 +133,11 @@ fn calculate_matrix(allocator: std.mem.Allocator, s: usize) !void {
             try kr.append(allocator, new_item);
         }
     }
+    number_of_calcmatrices += 1;
 }
 
-pub fn calculate_data(allocator: std.mem.Allocator) !void {
-    for (0..number_of_matrices) |s| {
+pub fn calculate_data(allocator: std.mem.Allocator, bound: usize) !void {
+    for (number_of_calcmatrices..bound + 1) |s| {
         try calculate_matrix(allocator, s);
     }
 }
