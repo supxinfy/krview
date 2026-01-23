@@ -21,6 +21,7 @@ Here is an example of the Kravchuk matrix viewer in action:
 - Interactive user interface
 - Several color schemes to view the data
 - Export images of matrices
+- Simple CLI that allows saving images from console
 
 ### Examples of Color Schemes
 
@@ -70,9 +71,16 @@ Or more detailed:
 - `A` and `D` or `LEFT` and `RIGHT` change the modulo
 - `SHIFT` increases speed of change
 - `H` or `SPACE` toggles helping screen
-- `E` exports the current matrix view as a .jpg image and saves it into assets/screenshots
+- `E` exports the current matrix view as a .png image and saves it into assets/screenshots
 
 Note that the size of the image depends on size of the window.
+
+### CLI
+
+If you want to know how to use CLI, do
+```bash
+./krview --help
+```
 
 ## Installation
 
