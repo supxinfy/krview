@@ -193,11 +193,16 @@ jobs:
           # Copy icon (make sure assets/pictures/icon.png exists)
           cp assets/pictures/icon.png "$APPDIR"/usr/share/icons/hicolor/256x256/apps/krview.png || true
 
-          # Download appimagetool (stable or continuous — choose what you prefer)
+          # download appimagetool
           wget -q -O appimagetool-x86_64.AppImage \
             https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
           chmod +x appimagetool-x86_64.AppImage
 
+          # ensure fuse runtime is present (fixes dlopen libfuse.so.2)
+          sudo apt-get update
+          sudo apt-get install -y libfuse2
+
+          # run appimagetool normally (will use FUSE)
           ./appimagetool-x86_64.AppImage "$APPDIR"
 
           # Move produced AppImage into dist with predictable name
