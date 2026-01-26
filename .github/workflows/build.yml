@@ -134,7 +134,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          APPDIR=AppDir
+          APPDIR=krview.AppDir
           ARTIFACT_NAME=${{ matrix.artifact }}
 
           sudo apt-get update
@@ -181,7 +181,7 @@ jobs:
           chmod +x "$APPDIR"/AppRun
 
           # Minimal desktop entry
-          cat > "$APPDIR"/usr/share/applications/krview.desktop <<'EOF'
+          cat > "$APPDIR"/usr/share/applications/__io.github.supxinfy.krview.desktop <<'EOF'
           [Desktop Entry]
           Type=Application
           Name=krview
@@ -189,21 +189,13 @@ jobs:
           Icon=krview
           Categories=Utility;
           EOF
+
+          ln -s "$APPDIR"/usr/share/applications/__io.github.supxinfy.krview.desktop "$APPDIR"/
+
+          chmod +x "$APPDIR"/usr/share/applications/__io.github.supxinfy.krview.desktop
 
           # copy icon to places appimagetool will search
           cp -v assets/pictures/icon.png "$APPDIR"/krview.png || true
-          cp -v assets/pictures/icon.png "$APPDIR"/usr/share/icons/hicolor/256x256/apps/krview.png || true
-
-          # (optional) ensure the usr/share/applications one exists too
-          cat > "$APPDIR"/usr/share/applications/krview.desktop <<'EOF'
-          [Desktop Entry]
-          Type=Application
-          Name=krview
-          Exec=krview
-          Icon=krview
-          Categories=Utility;
-          Terminal=false
-          EOF
 
           # Copy icon (make sure assets/pictures/icon.png exists)
           cp assets/pictures/icon.png "$APPDIR"/usr/share/icons/hicolor/256x256/apps/krview.png || true
@@ -257,7 +249,7 @@ jobs:
           <dict>
             <key>CFBundleName</key><string>krview</string>
             <key>CFBundleDisplayName</key><string>krview</string>
-            <key>CFBundleIdentifier</key><string>com.example.krview</string>
+            <key>CFBundleIdentifier</key><string>io.github.supxinfy.krview</string>
             <key>CFBundleExecutable</key><string>krview</string>
             <key>CFBundleVersion</key><string>1.0</string>
             <key>CFBundlePackageType</key><string>APPL</string>
