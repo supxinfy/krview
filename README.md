@@ -61,6 +61,9 @@ Here is an example of the Kravchuk matrix viewer in action:
 | C | Change color scheme |
 | W/S | Change order |
 | A/D | Change modulo |
+| J/L/I/K | Moves matrix around |
+| R | Restores original scate |
+| Z/X | Zooms in/out |
 | E | Export image |
 
 Or more detailed:
@@ -69,6 +72,9 @@ Or more detailed:
 - `C` changes color scheme
 - `W` and `S` or `UP` and `DOWN` change the order
 - `A` and `D` or `LEFT` and `RIGHT` change the modulo
+- `J` and `L` moves matrix across X-axis, while `I` and `K` moves across Y-axis.
+- `Z` zooms in/ `X` zooms out
+- `R` restores original scene
 - `SHIFT` increases speed of change
 - `H` or `SPACE` toggles helping screen
 - `E` exports the current matrix view as a .png image and saves it into assets/screenshots

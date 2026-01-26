@@ -22,6 +22,10 @@ const DELTA_TIME_SEC: f32 = 1.0 / @as(f32, @floatFromInt(FPS));
 
 const OFFSET = 80;
 
+pub var scaling: i32 = 1;
+pub var globalCoordX: i32 = 0;
+pub var globalCoordY: i32 = 0;
+
 fn make_rect(x: i32, y: i32, w: i32, h: i32) sdl.SDL_Rect {
     return sdl.SDL_Rect{
         .x = x,
@@ -86,16 +90,20 @@ pub fn render(renderer: *sdl.SDL_Renderer, font: *sdl.TTF_Font, order_str: [*c]c
     const usedW = cellSize * @as(i32, @intCast(idx));
     const usedH = cellSize * @as(i32, @intCast(idx));
 
+    // globalCoordX = kr.std.math.clamp(globalCoordX, -WINDOW_WIDTH, WINDOW_WIDTH);
+    // globalCoordY = kr.std.math.clamp(globalCoordY, -WINDOW_HEIGHT, WINDOW_HEIGHT);
     const startX = (WINDOW_WIDTH - usedW) >> 1;
     const startY = ((WINDOW_HEIGHT - usedH) >> 1) + (OFFSET >> 1);
 
+    // _ = sdl.SDL_RenderSetScale(renderer, scaling, scaling);
+
     for (0..idx) |i| {
         for (0..idx) |j| {
-            const cellCoordX = @as(i32, @intCast(startX + @as(i32, @intCast(i)) * cellSize));
-            const cellCoordY = @as(i32, @intCast(startY + @as(i32, @intCast(j)) * cellSize));
+            const cellCoordX = if (scaling > 0) @as(i32, @intCast(startX + @as(i32, @intCast(i)) * cellSize * scaling)) else @as(i32, @intCast(startX + @as(i32, @intCast(i)) * cellSize >> @as(u5, @intCast((1 - scaling)))));
+            const cellCoordY = if (scaling > 0) @as(i32, @intCast(startY + @as(i32, @intCast(j)) * cellSize * scaling)) else @as(i32, @intCast(startY + @as(i32, @intCast(j)) * cellSize >> @as(u5, @intCast((1 - scaling)))));
             const color = clrs.colorScheme(matrix.get(i, j), kr.moduli_list[modulo]);
             _ = sdl.SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
-            _ = sdl.SDL_RenderFillRect(renderer, &make_rect(cellCoordX, cellCoordY, cellSize, cellSize));
+            _ = sdl.SDL_RenderFillRect(renderer, &make_rect(cellCoordX + globalCoordX, cellCoordY + globalCoordY, cellSize * scaling, cellSize * scaling));
         }
     }
 

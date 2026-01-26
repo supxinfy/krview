@@ -1,4 +1,4 @@
-const std = @import("std");
+pub const std = @import("std");
 const DoublyLinkedList = std.DoublyLinkedList;
 const ArrayList = std.ArrayList;
 

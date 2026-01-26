@@ -104,6 +104,12 @@ pub fn main() !void {
     var update: bool = true;
     var helping_screen: bool = true;
 
+    var last_mouse_state_x: i32 = 0;
+    var last_mouse_state_y: i32 = 0;
+    var curr_mouse_state_x: i32 = 0;
+    var curr_mouse_state_y: i32 = 0;
+    var dragging: bool = false;
+
     while (!quit) {
         const order_str: []u8 = try std.fmt.allocPrint(
             allocator,
@@ -186,6 +192,30 @@ pub fn main() !void {
 
                             try r.export_screen(export_title_z, kr.moduliList[current_modulo].items[current_matrix], current_matrix, current_modulo);
                         },
+                        r.sdl.SDL_SCANCODE_I => {
+                            r.globalCoordY += 1 + @as(i32, @intCast(current_matrix / 50));
+                        },
+                        r.sdl.SDL_SCANCODE_K => {
+                            r.globalCoordY -= 1 + @as(i32, @intCast(current_matrix / 50));
+                        },
+                        r.sdl.SDL_SCANCODE_J => {
+                            r.globalCoordX += 1 + @as(i32, @intCast(current_matrix / 50));
+                        },
+                        r.sdl.SDL_SCANCODE_L => {
+                            r.globalCoordX -= 1 + @as(i32, @intCast(current_matrix / 50));
+                        },
+                        r.sdl.SDL_SCANCODE_Z => {
+                            r.scaling += 1;
+                        },
+                        r.sdl.SDL_SCANCODE_X => {
+                            r.scaling -= 1;
+                            if (r.scaling <= 0) r.scaling = 1;
+                        },
+                        r.sdl.SDL_SCANCODE_R => {
+                            r.scaling = 1;
+                            r.globalCoordX = 0;
+                            r.globalCoordY = 0;
+                        },
                         else => {},
                     }
                 },
@@ -204,6 +234,26 @@ pub fn main() !void {
                         },
                         else => {},
                     }
+                },
+                r.sdl.SDL_MOUSEBUTTONDOWN => {
+                    if (event.button.button == r.sdl.SDL_BUTTON_LEFT and !helping_screen) {
+                        dragging = true;
+
+                        last_mouse_state_x = event.button.x;
+                        last_mouse_state_y = event.button.y;
+
+                        curr_mouse_state_x = last_mouse_state_x;
+                        curr_mouse_state_y = last_mouse_state_y;
+                    }
+                },
+                r.sdl.SDL_MOUSEBUTTONUP => {
+                    if (event.button.button == r.sdl.SDL_BUTTON_LEFT) {
+                        dragging = false;
+                    }
+                },
+                r.sdl.SDL_MOUSEMOTION => {
+                    curr_mouse_state_x = event.motion.x;
+                    curr_mouse_state_y = event.motion.y;
                 },
                 else => {},
             }
@@ -225,6 +275,22 @@ pub fn main() !void {
             current_matrix += 1;
             update = true;
         }
+        if ((keyboard[r.sdl.SDL_SCANCODE_LSHIFT] != 0 and (keyboard[r.sdl.SDL_SCANCODE_J] != 0))) {
+            r.globalCoordX += 1 + @as(i32, @intCast(current_matrix / 50));
+            update = true;
+        }
+        if ((keyboard[r.sdl.SDL_SCANCODE_LSHIFT] != 0 and (keyboard[r.sdl.SDL_SCANCODE_L] != 0))) {
+            r.globalCoordX -= 1 + @as(i32, @intCast(current_matrix / 50));
+            update = true;
+        }
+        if ((keyboard[r.sdl.SDL_SCANCODE_LSHIFT] != 0 and (keyboard[r.sdl.SDL_SCANCODE_I] != 0))) {
+            r.globalCoordY += 1 + @as(i32, @intCast(current_matrix / 50));
+            update = true;
+        }
+        if ((keyboard[r.sdl.SDL_SCANCODE_LSHIFT] != 0 and (keyboard[r.sdl.SDL_SCANCODE_K] != 0))) {
+            r.globalCoordY -= 1 + @as(i32, @intCast(current_matrix / 50));
+            update = true;
+        }
         if (helping_screen) {
             r.render_helping_screen(renderer, font) catch |err| {
                 return err;
@@ -232,6 +298,20 @@ pub fn main() !void {
             r.sdl.SDL_Delay(500);
             continue;
         }
+
+        if (dragging) {
+            const dx = curr_mouse_state_x - last_mouse_state_x;
+            const dy = curr_mouse_state_y - last_mouse_state_y;
+
+            r.globalCoordX += dx;
+            r.globalCoordY += dy;
+
+            last_mouse_state_x = curr_mouse_state_x;
+            last_mouse_state_y = curr_mouse_state_y;
+
+            update = true;
+        }
+
         if (!update) {
             r.FPSdelay();
             continue;
