@@ -178,16 +178,31 @@ jobs:
           export LD_LIBRARY_PATH="$HERE/usr/lib:${LD_LIBRARY_PATH-}"
           exec "$HERE/usr/bin/krview" "$@"
           EOF
-                    chmod +x "$APPDIR"/AppRun
+          chmod +x "$APPDIR"/AppRun
 
-                    # Minimal desktop entry
-                    cat > "$APPDIR"/usr/share/applications/krview.desktop <<'EOF'
+          # Minimal desktop entry
+          cat > "$APPDIR"/usr/share/applications/krview.desktop <<'EOF'
           [Desktop Entry]
           Type=Application
           Name=krview
           Exec=krview
           Icon=krview
           Categories=Utility;
+          EOF
+
+          # copy icon to places appimagetool will search
+          cp -v assets/pictures/icon.png "$APPDIR"/krview.png || true
+          cp -v assets/pictures/icon.png "$APPDIR"/usr/share/icons/hicolor/256x256/apps/krview.png || true
+
+          # (optional) ensure the usr/share/applications one exists too
+          cat > "$APPDIR"/usr/share/applications/krview.desktop <<'EOF'
+          [Desktop Entry]
+          Type=Application
+          Name=krview
+          Exec=krview
+          Icon=krview
+          Categories=Utility;
+          Terminal=false
           EOF
 
           # Copy icon (make sure assets/pictures/icon.png exists)
