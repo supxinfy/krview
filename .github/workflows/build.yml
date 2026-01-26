@@ -134,8 +134,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          APPDIR=krview.AppDir
           ARTIFACT_NAME=${{ matrix.artifact }}
+          APPDIR="$ARTIFACT_NAME".AppDir
 
           sudo apt-get update
           sudo apt-get install -y patchelf wget
@@ -146,7 +146,6 @@ jobs:
           mkdir -p "$APPDIR"/usr/share/krview/assets/fonts
           mkdir -p "$APPDIR"/usr/share/krview/assets/screenshots
           mkdir -p "$APPDIR"/usr/share/applications
-          mkdir -p "$APPDIR"/usr/share/icons/hicolor/256x256/apps
 
           # Copy binary + assets
           cp zig-out/bin/krview "$APPDIR"/usr/bin/
@@ -178,10 +177,11 @@ jobs:
           export LD_LIBRARY_PATH="$HERE/usr/lib:${LD_LIBRARY_PATH-}"
           exec "$HERE/usr/bin/krview" "$@"
           EOF
+
           chmod +x "$APPDIR"/AppRun
 
           # Minimal desktop entry
-          cat > "$APPDIR"/usr/share/applications/__io.github.supxinfy.krview.desktop <<'EOF'
+          cat > "$APPDIR"/usr/share/applications/io.github.supxinfy.krview.desktop <<'EOF'
           [Desktop Entry]
           Type=Application
           Name=krview
@@ -190,15 +190,40 @@ jobs:
           Categories=Utility;
           EOF
 
-          ln -s "$APPDIR"/usr/share/applications/__io.github.supxinfy.krview.desktop "$APPDIR"/
+          mkdir -p "$APPDIR"/usr/share/metainfo
+          cat > "$APPDIR"/usr/share/metainfo/io.github.supxinfy.krview.appdata.xml << 'EOF'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <component type="desktop-application">
+            <id>io.github.supxinfy.krview</id>
+            
+            <name>krview</name>
+            <summary>A tool to visualize Krawtchouk matrices dynamically</summary>
+            
+            <metadata_license>MIT</metadata_license>
+            <project_license>MIT</project_license>
+            
+            <description>
+              <p>
+                Kravchuk (or Krawtchouk if you prefer spelling from the original paper) matrix viewer visualizes Kravchuk matrices modulo prime numbers.
+              </p>
+            </description>
+            
+            <launchable type="desktop-id">io.github.supxinfy.krview.desktop</launchable>
+            <screenshots>
+              <screenshot type="default">
+                <image>https://github.com/supxinfy/krview/raw/main/assets/pictures/krview.png</image>
+              </screenshot>
+            </screenshots>
+          </component>
+          EOF
 
-          chmod +x "$APPDIR"/usr/share/applications/__io.github.supxinfy.krview.desktop
+          cp -v "$APPDIR"/usr/share/applications/io.github.supxinfy.krview.desktop "$APPDIR"/io.github.supxinfy.krview.desktop
+          chmod 644 "$APPDIR"/io.github.supxinfy.krview.desktop
+
+          chmod +x "$APPDIR"/usr/share/applications/io.github.supxinfy.krview.desktop
 
           # copy icon to places appimagetool will search
           cp -v assets/pictures/icon.png "$APPDIR"/krview.png || true
-
-          # Copy icon (make sure assets/pictures/icon.png exists)
-          cp assets/pictures/icon.png "$APPDIR"/usr/share/icons/hicolor/256x256/apps/krview.png || true
 
           # download appimagetool
           wget -q -O appimagetool-x86_64.AppImage \
