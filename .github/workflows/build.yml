@@ -134,7 +134,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          ARTIFACT_NAME=${{ matrix.artifact }}
+          ARTIFACT_NAME=krview
           APPDIR="$ARTIFACT_NAME".AppDir
 
           sudo apt-get update
@@ -247,8 +247,8 @@ jobs:
           ./appimagetool-x86_64.AppImage "$APPDIR"
 
           # Move produced AppImage into dist with predictable name
-          mkdir -p dist
-          mv -v *.AppImage "dist/${ARTIFACT_NAME}"
+          mkdir -p dist/
+          mv -v *.AppImage "dist/
 
 
       - name: Package (macOS) - .app bundle
@@ -382,5 +382,4 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            release/**/*.tar.gz
-            release/**/*.zip
+            release/**/*
