@@ -205,7 +205,7 @@ jobs:
           mv -v *.AppImage "dist/${ARTIFACT_NAME}"
 
 
-            - name: Package (macOS) - .app bundle
+      - name: Package (macOS) - .app bundle
         if: matrix.os == 'macos-latest'
         shell: bash
         run: |
