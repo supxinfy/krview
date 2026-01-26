@@ -248,7 +248,7 @@ jobs:
 
           # Move produced AppImage into dist with predictable name
           mkdir -p dist/
-          mv -v *.AppImage dist/${ARTIFACT_NAME}.AppImage"
+          mv -v *.AppImage "dist/${ARTIFACT_NAME}.AppImage"
 
 
       - name: Package (macOS) - .app bundle
