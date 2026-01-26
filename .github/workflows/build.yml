@@ -201,6 +201,15 @@ jobs:
             
             <metadata_license>MIT</metadata_license>
             <project_license>MIT</project_license>
+
+            <url type="homepage">https://github.com/supxinfy/krview</url>
+
+            <content_rating type="oars-1.1"/>
+            
+            <developer id="io.github.supxinfy">
+              <name>supxinfy</name>
+            </developer>
+
             
             <description>
               <p>
