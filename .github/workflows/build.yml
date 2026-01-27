@@ -129,238 +129,65 @@ jobs:
           mkdir dist
           Move-Item ${{ matrix.artifact }} dist\${{ matrix.artifact }}
 
-      - name: Package (Linux) - AppImage
+      - name: Package (Linux)
         if: matrix.os == 'ubuntu-latest'
         shell: bash
         run: |
-          set -euo pipefail
-          ARTIFACT_NAME=krview
-          APPDIR="$ARTIFACT_NAME".AppDir
+          mkdir -p krview/assets/fonts
+          mkdir -p krview/assets/screenshots
+          mkdir -p krview/lib
 
-          sudo apt-get update
-          sudo apt-get install -y patchelf wget
+          cp zig-out/bin/krview krview/
+          chmod +x krview/krview
 
-          rm -rf "$APPDIR"
-          mkdir -p "$APPDIR"/usr/bin
-          mkdir -p "$APPDIR"/usr/lib
-          mkdir -p "$APPDIR"/usr/share/krview/assets/fonts
-          mkdir -p "$APPDIR"/usr/share/krview/assets/screenshots
-          mkdir -p "$APPDIR"/usr/share/applications
+          cp assets/fonts/Terminus.ttf krview/assets/fonts/
+          cp assets/fonts/OFL.TXT krview/assets/fonts/
 
-          # Copy binary + assets
-          cp zig-out/bin/krview "$APPDIR"/usr/bin/
-          chmod +x "$APPDIR"/usr/bin/krview
-          cp assets/fonts/Terminus.ttf "$APPDIR"/usr/share/krview/assets/fonts/
-          cp assets/fonts/OFL.TXT "$APPDIR"/usr/share/krview/assets/fonts/
+          sudo apt-get install -y patchelf
 
-          # Collect shared libs used by the binary (exclude core glibc/ld and linux-vdso)
-          # Use sed to reliably extract the absolute path after the "=>"
           ldd zig-out/bin/krview \
-            | sed -n 's/.*=> \(\/[^ ]*\).*/\1/p' \
-            | sort -u \
-            | grep -vE 'libc.so.6|ld-linux|linux-vdso' \
-            | while read -r lib; do
-                echo "Copying $lib"
-                cp -v "$lib" "$APPDIR"/usr/lib/ || true
-              done
+          | sed -n 's/.*=> \(\/[^ ]*\).*/\1/p' \
+          | grep -vE 'libc.so|ld-linux|linux-vdso' \
+          | sort -u \
+          | while read -r lib; do
+              echo "Copying $lib"
+              cp -v "$lib" krview/lib/
+            done
 
-          # Optionally: also copy any symlink targets (sometimes ldd gives symlinks)
-          # and ensure they resolve correctly. The above cp usually copies the file the symlink points to.
+          patchelf --set-rpath '$ORIGIN/lib' krview/krview
 
-          # Ensure rpath is relative to AppImage's lib folder (patchelf accepts $ORIGIN literal)
-          patchelf --set-rpath '$ORIGIN/../lib' "$APPDIR"/usr/bin/krview
-
-          # AppRun that sets LD_LIBRARY_PATH and runs the binary
-          cat > "$APPDIR"/AppRun <<'EOF'
-          #!/bin/sh
-          HERE="$(dirname "$(readlink -f "${0}")")"
-          export LD_LIBRARY_PATH="$HERE/usr/lib:${LD_LIBRARY_PATH-}"
-          exec "$HERE/usr/bin/krview" "$@"
-          EOF
-
-          chmod +x "$APPDIR"/AppRun
-
-          # Minimal desktop entry
-          cat > "$APPDIR"/usr/share/applications/io.github.supxinfy.krview.desktop <<'EOF'
-          [Desktop Entry]
-          Type=Application
-          Name=krview
-          Exec=krview
-          Icon=krview
-          Categories=Utility;
-          EOF
-
-          mkdir -p "$APPDIR"/usr/share/metainfo
-          cat > "$APPDIR"/usr/share/metainfo/io.github.supxinfy.krview.appdata.xml << 'EOF'
-          <?xml version="1.0" encoding="UTF-8"?>
-          <component type="desktop-application">
-            <id>io.github.supxinfy.krview</id>
-            
-            <name>krview</name>
-            <summary>A tool to visualize Krawtchouk matrices dynamically</summary>
-            
-            <metadata_license>MIT</metadata_license>
-            <project_license>MIT</project_license>
-
-            <url type="homepage">https://github.com/supxinfy/krview</url>
-
-            <content_rating type="oars-1.1"/>
-            
-            <developer id="io.github.supxinfy">
-              <name>supxinfy</name>
-            </developer>
-
-            
-            <description>
-              <p>
-                Kravchuk (or Krawtchouk if you prefer spelling from the original paper) matrix viewer visualizes Kravchuk matrices modulo prime numbers.
-              </p>
-            </description>
-            
-            <launchable type="desktop-id">io.github.supxinfy.krview.desktop</launchable>
-            <screenshots>
-              <screenshot type="default">
-                <image>https://github.com/supxinfy/krview/raw/main/assets/pictures/krview.png</image>
-              </screenshot>
-            </screenshots>
-          </component>
-          EOF
-
-          cp -v "$APPDIR"/usr/share/applications/io.github.supxinfy.krview.desktop "$APPDIR"/io.github.supxinfy.krview.desktop
-          chmod 644 "$APPDIR"/io.github.supxinfy.krview.desktop
-
-          chmod +x "$APPDIR"/usr/share/applications/io.github.supxinfy.krview.desktop
-
-          # copy icon to places appimagetool will search
-          cp -v assets/pictures/icon.png "$APPDIR"/krview.png || true
-
-          # download appimagetool
-          wget -q -O appimagetool-x86_64.AppImage \
-            https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
-          chmod +x appimagetool-x86_64.AppImage
-
-          # ensure fuse runtime is present (fixes dlopen libfuse.so.2)
-          sudo apt-get update
-          sudo apt-get install -y libfuse2
-
-          # run appimagetool normally (will use FUSE)
-          ./appimagetool-x86_64.AppImage "$APPDIR"
-
-          # Move produced AppImage into dist with predictable name
-          mkdir -p dist/
-          mv -v krview* dist/
+          tar -czf ${{ matrix.artifact }} krview
+          mkdir -p dist
+          mv ${{ matrix.artifact }} dist/${{ matrix.artifact }}
 
 
-      - name: Package (macOS) - .app bundle
+      - name: Package (macOS)
         if: matrix.os == 'macos-latest'
         shell: bash
         run: |
-          set -euo pipefail
-          APP_NAME=krview
-          APP_BUNDLE="${APP_NAME}.app"
-          CONTENTS="$APP_BUNDLE/Contents"
-          MACOS_DIR="$CONTENTS/MacOS"
-          RESOURCES_DIR="$CONTENTS/Resources"
-          FRAMEWORKS_DIR="$CONTENTS/Frameworks"
-          ARTIFACT=${{ matrix.artifact }}
+          mkdir -p krview/assets/fonts
+          mkdir -p krview/assets/screenshots
+          mkdir -p krview/lib
 
-          # Prepare bundle layout
-          rm -rf "$APP_BUNDLE"
-          mkdir -p "$MACOS_DIR" "$RESOURCES_DIR/assets/fonts" "$RESOURCES_DIR/assets/screenshots" "$FRAMEWORKS_DIR"
+          cp /usr/local/opt/sdl2/lib/libSDL2-2.0.0.dylib krview/lib/
+          cp /usr/local/opt/sdl2_ttf/lib/libSDL2_ttf-2.0.0.dylib krview/lib/
+          cp /usr/local/opt/sdl2_image/lib/libSDL2_image-2.0.0.dylib krview/lib/
 
-          # Copy binary and assets
-          cp zig-out/bin/krview "$MACOS_DIR/$APP_NAME"
-          chmod +x "$MACOS_DIR/$APP_NAME"
-          cp -v assets/fonts/Terminus.ttf "$RESOURCES_DIR/assets/fonts/" || true
-          cp -v assets/fonts/OFL.TXT "$RESOURCES_DIR/assets/fonts/" || true
-          cp -v assets/pictures/icon.png "$RESOURCES_DIR/icon.png" || true
+          cp zig-out/bin/krview krview/
+          cp assets/fonts/Terminus.ttf krview/assets/fonts/
+          cp assets/fonts/OFL.TXT krview/assets/fonts/
 
-          # Minimal Info.plist
-          cat > "$CONTENTS/Info.plist" <<'EOF'
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0">
-          <dict>
-            <key>CFBundleName</key><string>krview</string>
-            <key>CFBundleDisplayName</key><string>krview</string>
-            <key>CFBundleIdentifier</key><string>io.github.supxinfy.krview</string>
-            <key>CFBundleExecutable</key><string>krview</string>
-            <key>CFBundleVersion</key><string>1.0</string>
-            <key>CFBundlePackageType</key><string>APPL</string>
-            <key>LSMinimumSystemVersion</key><string>10.13</string>
-          </dict>
-          </plist>
-          EOF
+          install_name_tool -add_rpath "@executable_path/lib" krview/krview
 
-          # Find non-system dylib/framework dependencies and copy them into Contents/Frameworks
-          # Exclude /usr/lib and /System libraries (these are system-provided).
-          otool -L zig-out/bin/krview | sed '1d' | awk '{print $1}' | sort -u | while read -r dep; do
-            # skip empty or system libs
-            if [ -z "$dep" ]; then continue; fi
-            case "$dep" in
-              /usr/lib/*|/System/*)
-                # system lib, skip
-                continue
-                ;;
-            esac
+          install_name_tool -change /usr/local/opt/sdl2/lib/libSDL2-2.0.0.dylib @rpath/libSDL2-2.0.0.dylib krview/krview
 
-            # If dependency is inside a .framework path, copy whole framework
-            if echo "$dep" | grep -qE '\.framework/'; then
-              # extract framework root (e.g. /opt/homebrew/Cellar/sdl2/2.0.16/Frameworks/SDL2.framework)
-              FROOT=$(echo "$dep" | sed -E 's@(.*/[^/]+\.framework)/.*@\1@')
-              FN=$(basename "$FROOT")
-              if [ ! -d "$FRAMEWORKS_DIR/$FN" ]; then
-                echo "Copying framework $FROOT -> $FRAMEWORKS_DIR/$FN"
-                cp -R "$FROOT" "$FRAMEWORKS_DIR/$FN"
-              fi
-              # change binary's reference to point to bundled framework
-              install_name_tool -change "$dep" "@executable_path/../Frameworks/$FN/$(basename "$dep")" "$MACOS_DIR/$APP_NAME" || true
-            else
-              # normal dylib: copy into Frameworks and rewrite binary reference
-              LIBNAME=$(basename "$dep")
-              if [ ! -f "$FRAMEWORKS_DIR/$LIBNAME" ]; then
-                echo "Copying dylib $dep -> $FRAMEWORKS_DIR/$LIBNAME"
-                cp -v "$dep" "$FRAMEWORKS_DIR/$LIBNAME" || true
-              fi
-              install_name_tool -change "$dep" "@executable_path/../Frameworks/$LIBNAME" "$MACOS_DIR/$APP_NAME" || true
-            fi
-          done
+          install_name_tool -change /usr/local/opt/sdl2_ttf/lib/libSDL2_ttf-2.0.0.dylib @rpath/libSDL2_ttf-2.0.0.dylib krview/krview
 
-          # Ensure binary will look into our Frameworks folder at runtime
-          install_name_tool -add_rpath "@executable_path/../Frameworks" "$MACOS_DIR/$APP_NAME" || true
+          install_name_tool -change /usr/local/opt/sdl2_image/lib/libSDL2_image-2.0.0.dylib @rpath/libSDL2_image-2.0.0.dylib krview/krview
 
-          # For copied dylibs: set their id to @rpath/<name> and fix internal references to each other
-          find "$FRAMEWORKS_DIR" -type f \( -name "*.dylib" -o -name "*.so" \) -print0 | while IFS= read -r -d '' LIB; do
-            BASENAME=$(basename "$LIB")
-            echo "Setting id for $LIB -> @rpath/$BASENAME"
-            install_name_tool -id "@rpath/$BASENAME" "$LIB" || true
-
-            # fix dependencies inside the dylib to point to @rpath if they are in our Frameworks folder
-            otool -L "$LIB" | sed '1d' | awk '{print $1}' | while read -r sub; do
-              case "$sub" in
-                /usr/lib/*|/System/*)
-                  continue
-                  ;;
-                *)
-                  SUBNAME=$(basename "$sub")
-                  if [ -f "$FRAMEWORKS_DIR/$SUBNAME" ]; then
-                    install_name_tool -change "$sub" "@rpath/$SUBNAME" "$LIB" || true
-                  fi
-                  ;;
-              esac
-            done
-          done
-
-          # For copied frameworks: adjust binary references were handled above; some frameworks may contain inner dylibs
-          # (best-effort; for complex frameworks further corrections might be necessary)
-
-          # Create the tarball artifact containing the .app bundle
-          codesign --force --deep --sign - "$APP_BUNDLE"
-
+          tar -czf ${{ matrix.artifact }} krview
           mkdir -p dist
-          
-          mv -v "$APP_BUNDLE" dist/
-
+          mv ${{ matrix.artifact }} dist/${{ matrix.artifact }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -384,10 +211,9 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            dist/krview*.zip
-            dist/krview*.AppImage
-            dist/krview*.app
-            dist/krview*.tar.gz
+            release/**/krview-windows.zip
+            release/**/krview-linux.tar.gz
+            release/**/krview-macos.tar.gz
 
 
 
