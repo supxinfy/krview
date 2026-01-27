@@ -169,9 +169,11 @@ jobs:
           mkdir -p krview/assets/screenshots
           mkdir -p krview/lib
 
-          cp /usr/local/opt/sdl2/lib/libSDL2-2.0.0.dylib krview/lib/
-          cp /usr/local/opt/sdl2_ttf/lib/libSDL2_ttf-2.0.0.dylib krview/lib/
-          cp /usr/local/opt/sdl2_image/lib/libSDL2_image-2.0.0.dylib krview/lib/
+          BREW_PREFIX="$(brew --prefix)"
+
+          cp "$BREW_PREFIX/opt/sdl2/lib/libSDL2-2.0.0.dylib" krview/lib/
+          cp "$BREW_PREFIX/opt/sdl2_ttf/lib/libSDL2_ttf-2.0.0.dylib" krview/lib/
+          cp "$BREW_PREFIX/opt/sdl2_image/lib/libSDL2_image-2.0.0.dylib" krview/lib/
 
           cp zig-out/bin/krview krview/
           cp assets/fonts/Terminus.ttf krview/assets/fonts/
@@ -179,11 +181,20 @@ jobs:
 
           install_name_tool -add_rpath "@executable_path/lib" krview/krview
 
-          install_name_tool -change /usr/local/opt/sdl2/lib/libSDL2-2.0.0.dylib @rpath/libSDL2-2.0.0.dylib krview/krview
+          install_name_tool -change \
+          "$BREW_PREFIX/opt/sdl2/lib/libSDL2-2.0.0.dylib" \
+          "@rpath/libSDL2-2.0.0.dylib" \
+          krview/krview
 
-          install_name_tool -change /usr/local/opt/sdl2_ttf/lib/libSDL2_ttf-2.0.0.dylib @rpath/libSDL2_ttf-2.0.0.dylib krview/krview
+          install_name_tool -change \
+            "$BREW_PREFIX/opt/sdl2_ttf/lib/libSDL2_ttf-2.0.0.dylib" \
+            "@rpath/libSDL2_ttf-2.0.0.dylib" \
+            krview/krview
 
-          install_name_tool -change /usr/local/opt/sdl2_image/lib/libSDL2_image-2.0.0.dylib @rpath/libSDL2_image-2.0.0.dylib krview/krview
+          install_name_tool -change \
+            "$BREW_PREFIX/opt/sdl2_image/lib/libSDL2_image-2.0.0.dylib" \
+            "@rpath/libSDL2_image-2.0.0.dylib" \
+            krview/krview
 
           tar -czf ${{ matrix.artifact }} krview
           mkdir -p dist
