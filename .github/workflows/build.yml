@@ -35,12 +35,6 @@ jobs:
         with:
           version: ${{ env.ZIG_VERSION }}
 
-      - name: Install Zig (Windows)
-        if: matrix.os == 'windows-latest'
-        uses: goto-bus-stop/setup-zig@v2
-        with:
-          version: 0.14.0
-
       # ---------- SDL ----------
       - name: Install SDL (Linux)
         if: matrix.os == 'ubuntu-latest'
@@ -254,7 +248,7 @@ jobs:
 
           # Move produced AppImage into dist with predictable name
           mkdir -p dist/
-          mv -v *.AppImage dist/
+          mv -v krview* dist/
 
 
       - name: Package (macOS) - .app bundle
@@ -361,9 +355,11 @@ jobs:
           # (best-effort; for complex frameworks further corrections might be necessary)
 
           # Create the tarball artifact containing the .app bundle
+          codesign --force --deep --sign - "$APP_BUNDLE"
+
           mkdir -p dist
-          tar -czf "$ARTIFACT" "$APP_BUNDLE"
-          mv -v "$ARTIFACT" dist/"$ARTIFACT"
+          
+          mv -v "$APP_BUNDLE" dist/
 
 
       - name: Upload artifact
