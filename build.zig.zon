@@ -25,8 +25,8 @@
     // internet connectivity.
     .dependencies = .{
         .zeit = .{
-            .url = "git+https://github.com/supxinfy/zeit#7ac64d72dbfb1a4ad549102e7d4e232a687d32d8",
-            .hash = "zeit-0.6.0-5I6bk36tAgATpSl9wjFmRPMqYN2Mn0JQHgIcRNcqDpJA",
+            .url = "git+https://github.com/supxinfy/zeit#6e52634fa37511b7d02caf9cb3ff59686f38ea34",
+            .hash = "zeit-0.6.0-5I6bk5KtAgApmU5yGlvwK5AaErYhLUlO0E9cwrPgk3zv",
         },
     },
     .paths = .{
