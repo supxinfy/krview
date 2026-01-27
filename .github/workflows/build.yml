@@ -35,6 +35,12 @@ jobs:
         with:
           version: ${{ env.ZIG_VERSION }}
 
+      - name: Install Zig (Windows)
+        if: matrix.os == 'windows-latest'
+        uses: goto-bus-stop/setup-zig@v2
+        with:
+          version: 0.14.0
+
       # ---------- SDL ----------
       - name: Install SDL (Linux)
         if: matrix.os == 'ubuntu-latest'
