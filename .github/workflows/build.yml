@@ -22,10 +22,6 @@ jobs:
         include:
           - os: ubuntu-latest
             artifact: krview-linux.tar.gz
-          - os: windows-latest
-            artifact: krview-windows.zip
-          - os: macos-latest
-            artifact: krview-macos.tar.gz
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -42,93 +38,15 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libsdl2-dev libsdl2-ttf-dev libsdl2-image-dev
 
-      - name: Install SDL (macOS)
-        if: matrix.os == 'macos-latest'
-        run: |
-          brew update
-          brew install sdl2 sdl2_ttf sdl2_image
-
-      - name: Install SDL (Windows)
-        if: matrix.os == 'windows-latest'
-        shell: pwsh
-        run: |
-          $VCPKG_ROOT = "C:\vcpkg"
-
-          vcpkg install sdl2 sdl2-ttf sdl2-image
-
-          echo "VCPKG_ROOT=$VCPKG_ROOT" | Out-File -Append $env:GITHUB_ENV
-          echo "C_INCLUDE_PATH=$VCPKG_ROOT\installed\x64-windows\include" | Out-File -Append $env:GITHUB_ENV
-          echo "LIBRARY_PATH=$VCPKG_ROOT\installed\x64-windows\lib" | Out-File -Append $env:GITHUB_ENV
-          echo "PATH=$VCPKG_ROOT\installed\x64-windows\bin;$env:PATH" | Out-File -Append $env:GITHUB_ENV
-
-      - name: Diagnose vcpkg files (Windows)
-        if: matrix.os == 'windows-latest'
-        shell: pwsh
-        run: |
-          Write-Host "C_INCLUDE_PATH: $env:C_INCLUDE_PATH"
-          Write-Host "LIBRARY_PATH:  $env:LIBRARY_PATH"
-          Write-Host "PATH (head): $($env:PATH.Split(';')[0..5] -join ';')"
-          Get-ChildItem C:\vcpkg\installed\x64-windows\lib | Select-Object Name, Length
-          Get-ChildItem C:\vcpkg\installed\x64-windows\bin  | Select-Object Name, Length
-
       #vcpkg install sdl2 sdl2-ttf sdl2-image    
       # I pray for windows to die
-      - name: Set PATH for vcpkg DLLs
-        if: matrix.os == 'windows-latest'
-        shell: pwsh
-        run: |
-          $env:PATH = "C:\vcpkg\installed\x64-windows\bin;$env:PATH"
-      # ---------- BUILD ----------
-      - name: Build (Windows)
-        if: matrix.os == 'windows-latest'
-        run: |
-          zig build -Doptimize=ReleaseFast --search-prefix "C:\vcpkg\installed\x64-windows"
-        shell: pwsh
-        env:
-          ZIG_VERSION: 0.15.2
-          C_INCLUDE_PATH: C:\vcpkg\installed\x64-windows\include
-          LIBRARY_PATH: C:\vcpkg\installed\x64-windows\lib
-          VCPKG_ROOT: C:\vcpkg
-
       - name: Build (Linux/Mac)
         if: matrix.os != 'windows-latest'
         run: |
           zig build -Doptimize=ReleaseFast -Dcpu=baseline
         shell: bash
 
-            # ---------- PACKAGE ----------
-      - name: Package (Windows)
-        if: matrix.os == 'windows-latest'
-        shell: pwsh
-        run: |
-          mkdir -p krview\assets\fonts
-          mkdir -p krview\assets\screenshots
-
-          Copy-Item zig-out\bin\krview.exe krview\
-
-          $deps = @(
-            "SDL2.dll",
-            "SDL2_ttf.dll",
-            "SDL2_image.dll",
-            "freetype.dll",
-            "zlib1.dll",
-            "libpng16.dll",
-            "brotlidec.dll",
-            "brotlicommon.dll",
-            "bz2.dll"
-          )
-
-          foreach ($d in $deps) {
-            Copy-Item "C:\vcpkg\installed\x64-windows\bin\$d" krview\
-          }
-
-          Copy-Item assets\fonts\Terminus.ttf krview\assets\fonts\
-          Copy-Item assets\fonts\OFL.TXT krview\assets\fonts\
-
-          Compress-Archive krview ${{ matrix.artifact }}
-          mkdir dist
-          Move-Item ${{ matrix.artifact }} dist\${{ matrix.artifact }}
-
+            # ---------- PACKAGE ---------
       - name: Package (Linux)
         if: matrix.os == 'ubuntu-latest'
         shell: bash
@@ -160,22 +78,6 @@ jobs:
           mkdir -p dist
           mv ${{ matrix.artifact }} dist/${{ matrix.artifact }}
 
-
-      - name: Package (macOS)
-        if: matrix.os == 'macos-latest'
-        shell: bash
-        run: |
-          mkdir -p krview/assets/fonts
-          mkdir -p krview/assets/screenshots
-
-          cp zig-out/bin/krview krview/
-          cp assets/fonts/Terminus.ttf krview/assets/fonts/
-          cp assets/fonts/OFL.TXT krview/assets/fonts/
-
-          tar -czf ${{ matrix.artifact }} krview
-          mkdir -p dist
-          mv ${{ matrix.artifact }} dist/${{ matrix.artifact }}
-
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
@@ -198,9 +100,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            release/**/krview-windows.zip
             release/**/krview-linux.tar.gz
-            release/**/krview-macos.tar.gz
 
 
 
