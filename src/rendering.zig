@@ -2,6 +2,8 @@ const kr = @import("krawtchouk.zig");
 const clrs = @import("colorshemes.zig");
 const colortype = @import("colors.zig");
 const Color = colortype.Color;
+const menu = @import("menu.zig");
+const std = @import("std");
 
 pub const sdl = @cImport({
     @cInclude("SDL2/SDL.h");
@@ -11,6 +13,9 @@ pub const sdl = @cImport({
 
 pub var WINDOW_WIDTH: c_int = 800;
 pub var WINDOW_HEIGHT: c_int = 900;
+
+const MAX_IMAGE_DIMENSION: i32 = 32767; // libpng's safe maximum (2^15 - 1)
+const MAX_IMAGE_PIXELS: i64 = 500_000_000; // 500 megapixels max
 
 pub const ORDER = "Order: {any}";
 pub const MODULO = "Modulo: {any}";
@@ -47,48 +52,87 @@ fn tosdlcolor(color: colortype.Color) SDL_Color {
 const background = colortype.Color{ .r = 18, .g = 18, .b = 18, .a = 255 };
 const text_color = colortype.Color{ .r = 208, .g = 208, .b = 208, .a = 255 };
 
-pub fn render(renderer: *sdl.SDL_Renderer, font: *sdl.TTF_Font, order_str: [*c]const u8, modulo_str: [*c]const u8, matrix: *kr.KravchukMatrix, idx: usize, modulo: usize) !void {
+fn render_status_bar(
+    renderer: *sdl.SDL_Renderer,
+    font: *sdl.TTF_Font,
+    order: usize,
+    modulo: usize,
+) !void {
+    const status_buf = try kr.std.heap.page_allocator.alloc(u8, 256);
+    defer kr.std.heap.page_allocator.free(status_buf);
+
+    const status_text = try kr.std.fmt.bufPrint(
+        status_buf,
+        "Order: {d}/{d} | Modulo: {d} | {s} | [H] Help | [E] Export\x00",
+        .{ order, kr.number_of_calcmatrices, kr.moduli_list[modulo], clrs.current_color_scheme.name },
+    );
+
+    const status_surface = sdl.TTF_RenderText_Solid(
+        font,
+        @ptrCast(status_text.ptr),
+        tosdlcolor(Color{ .r = 150, .g = 150, .b = 150, .a = 255 }),
+    );
+    defer sdl.SDL_FreeSurface(status_surface);
+
+    if (status_surface == null) return;
+
+    const status_texture = sdl.SDL_CreateTextureFromSurface(renderer, status_surface);
+    defer sdl.SDL_DestroyTexture(status_texture);
+
+    _ = sdl.SDL_RenderCopy(
+        renderer,
+        status_texture,
+        null,
+        &make_rect(10, 10, status_surface.*.w, status_surface.*.h),
+    );
+}
+
+pub fn render(renderer: *sdl.SDL_Renderer, font: *sdl.TTF_Font, matrix: *kr.KravchukMatrix, idx: usize, modulo: usize, cell_display: *menu.CellValueDisplay, allocator: std.mem.Allocator) !void {
     _ = sdl.SDL_SetRenderDrawColor(renderer, background.r, background.g, background.b, background.a);
     _ = sdl.SDL_RenderClear(renderer);
 
-    const order_surface = sdl.TTF_RenderText_Solid(font, order_str, tosdlcolor(text_color));
-    defer sdl.SDL_FreeSurface(order_surface);
+    // const order_surface = sdl.TTF_RenderText_Solid(font, order_str, tosdlcolor(text_color));
+    // defer sdl.SDL_FreeSurface(order_surface);
 
-    if (order_surface == null) {
-        sdl.SDL_Log("Unable to initialize sdl: %s", sdl.SDL_GetError());
-        return error.sdlSurfaceNotFound;
-    }
-    const order_texture = sdl.SDL_CreateTextureFromSurface(renderer, order_surface);
-    defer sdl.SDL_DestroyTexture(order_texture);
+    // if (order_surface == null) {
+    //     sdl.SDL_Log("Unable to initialize sdl: %s", sdl.SDL_GetError());
+    //     return error.sdlSurfaceNotFound;
+    // }
+    // const order_texture = sdl.SDL_CreateTextureFromSurface(renderer, order_surface);
+    // defer sdl.SDL_DestroyTexture(order_texture);
 
-    const modulo_surface = sdl.TTF_RenderText_Solid(font, modulo_str, tosdlcolor(text_color));
-    defer sdl.SDL_FreeSurface(modulo_surface);
+    // const modulo_surface = sdl.TTF_RenderText_Solid(font, modulo_str, tosdlcolor(text_color));
+    // defer sdl.SDL_FreeSurface(modulo_surface);
 
-    if (modulo_surface == null) {
-        sdl.SDL_Log("Unable to initialize sdl: %s", sdl.SDL_GetError());
-        return error.sdlSurfaceNotFound;
-    }
-    const modulo_texture = sdl.SDL_CreateTextureFromSurface(renderer, modulo_surface);
-    defer sdl.SDL_DestroyTexture(modulo_texture);
+    // if (modulo_surface == null) {
+    //     sdl.SDL_Log("Unable to initialize sdl: %s", sdl.SDL_GetError());
+    //     return error.sdlSurfaceNotFound;
+    // }
+    // const modulo_texture = sdl.SDL_CreateTextureFromSurface(renderer, modulo_surface);
+    // defer sdl.SDL_DestroyTexture(modulo_texture);
 
-    _ = sdl.SDL_SetRenderDrawColor(renderer, text_color.r, text_color.g, text_color.b, text_color.a);
+    // _ = sdl.SDL_SetRenderDrawColor(renderer, text_color.r, text_color.g, text_color.b, text_color.a);
 
-    const srcrect_order = make_rect(0, 0, 2 * order_surface.*.w, 2 * order_surface.*.h);
-    const dstrect_order = make_rect(0, 0, 2 * order_surface.*.w, 2 * order_surface.*.h);
+    // const srcrect_order = make_rect(0, 0, 2 * order_surface.*.w, 2 * order_surface.*.h);
+    // const dstrect_order = make_rect(0, 0, 2 * order_surface.*.w, 2 * order_surface.*.h);
 
-    const srcrect_modulo = make_rect(0, 0, 2 * modulo_surface.*.w, 2 * modulo_surface.*.h);
-    const dstrect_modulo = make_rect(0, order_surface.*.h + 18, 2 * modulo_surface.*.w, 2 * modulo_surface.*.h);
+    // const srcrect_modulo = make_rect(0, 0, 2 * modulo_surface.*.w, 2 * modulo_surface.*.h);
+    // const dstrect_modulo = make_rect(0, order_surface.*.h + 18, 2 * modulo_surface.*.w, 2 * modulo_surface.*.h);
 
-    _ = sdl.SDL_RenderCopy(renderer, order_texture, &srcrect_order, &dstrect_order);
+    // _ = sdl.SDL_RenderCopy(renderer, order_texture, &srcrect_order, &dstrect_order);
 
-    _ = sdl.SDL_RenderCopy(renderer, modulo_texture, &srcrect_modulo, &dstrect_modulo);
+    // _ = sdl.SDL_RenderCopy(renderer, modulo_texture, &srcrect_modulo, &dstrect_modulo);
 
-    const cellSizeW = @as(i32, @intCast(@as(usize, @intCast(WINDOW_WIDTH)) / (idx)));
-    const cellSizeH = @as(i32, @intCast((@as(usize, @intCast(WINDOW_HEIGHT)) - OFFSET) / (idx)));
+    const real_idx = idx + 1;
+
+    try render_status_bar(renderer, font, idx, modulo);
+
+    const cellSizeW = @as(i32, @intCast(@as(usize, @intCast(WINDOW_WIDTH)) / (real_idx)));
+    const cellSizeH = @as(i32, @intCast((@as(usize, @intCast(WINDOW_HEIGHT)) - OFFSET) / (real_idx)));
     const cellSize = @min(cellSizeW, cellSizeH);
 
-    const usedW = cellSize * @as(i32, @intCast(idx));
-    const usedH = cellSize * @as(i32, @intCast(idx));
+    const usedW = cellSize * @as(i32, @intCast(real_idx));
+    const usedH = cellSize * @as(i32, @intCast(real_idx));
 
     // globalCoordX = kr.std.math.clamp(globalCoordX, -WINDOW_WIDTH, WINDOW_WIDTH);
     // globalCoordY = kr.std.math.clamp(globalCoordY, -WINDOW_HEIGHT, WINDOW_HEIGHT);
@@ -97,8 +141,8 @@ pub fn render(renderer: *sdl.SDL_Renderer, font: *sdl.TTF_Font, order_str: [*c]c
 
     // _ = sdl.SDL_RenderSetScale(renderer, scaling, scaling);
 
-    for (0..idx) |i| {
-        for (0..idx) |j| {
+    for (0..real_idx) |i| {
+        for (0..real_idx) |j| {
             const cellCoordX = if (scaling > 0) @as(i32, @intCast(startX + @as(i32, @intCast(i)) * cellSize * scaling)) else @as(i32, @intCast(startX + @as(i32, @intCast(i)) * cellSize >> @as(u5, @intCast((1 - scaling)))));
             const cellCoordY = if (scaling > 0) @as(i32, @intCast(startY + @as(i32, @intCast(j)) * cellSize * scaling)) else @as(i32, @intCast(startY + @as(i32, @intCast(j)) * cellSize >> @as(u5, @intCast((1 - scaling)))));
             const color = clrs.colorScheme(matrix.get(i, j), kr.moduli_list[modulo]);
@@ -106,6 +150,8 @@ pub fn render(renderer: *sdl.SDL_Renderer, font: *sdl.TTF_Font, order_str: [*c]c
             _ = sdl.SDL_RenderFillRect(renderer, &make_rect(cellCoordX + globalCoordX, cellCoordY + globalCoordY, cellSize * scaling, cellSize * scaling));
         }
     }
+
+    try cell_display.render(renderer, font, allocator);
 
     sdl.SDL_RenderPresent(renderer);
 }
@@ -176,14 +222,24 @@ pub fn render_helping_screen(renderer: *sdl.SDL_Renderer, font: *sdl.TTF_Font) !
 
     const help_lines = [_][*c]const u8{
         "Controls:",
-        "- Up/Down Arrow or W/S: Increase/Decrease Matrix Order",
-        "- Left/Right Arrow or A/D: Change Modulo",
-        "- C: Change Color Scheme",
-        "Schemes Available: Gogin, Gray-scale, Logarithmic,",
+        "  Navigation:",
+        "    W/S or arrows   Change Matrix Order",
+        "    A/D or arrows   Change Modulo",
+        "    Hold SHIFT      Fast navigation",
+        "  View:",
+        "    C               Cycle Color Scheme",
+        "    Z/X             Zoom In/Out",
+        "    I/J/K/L         Pan view",
+        "    R               Reset view",
+        "    Mouse Drag      Pan matrix",
+        "    Mouse Click     Show cell value",
+        "  Actions:",
+        "    E               Export as PNG",
+        "    H or SPACE      Toggle this help",
+        "    Q or ESC        Quit",
+        " ",
+        "Current schemes: Gogin, Gray, Log,",
         "Viridis, Plasma, Inferno, Magma",
-        "- H or SPACE: Toggle Help Screen",
-        "- E: Export Current Screen as JPG",
-        "- Q: Quit Application",
     };
     var line_y: i32 = 0;
     for (desctiption_lines) |line| {
@@ -251,13 +307,37 @@ pub fn FPSdelay() void {
 }
 
 pub fn export_screen(title: [*c]const u8, matrix: *kr.KravchukMatrix, idx: usize, modulo: usize) !void {
-    const quality_factor = @as(i32, @intCast(3 + @divFloor(idx, 50)));
-    const cellSizeW = @as(i32, @intCast(@as(usize, @intCast(WINDOW_WIDTH)) / (idx)));
-    const cellSizeH = @as(i32, @intCast((@as(usize, @intCast(WINDOW_HEIGHT)) - OFFSET) / (idx)));
-    const cellSize = quality_factor * @min(cellSizeW, cellSizeH);
+    const cellSize = calculate_safe_cell_size(idx);
 
     const w = cellSize * @as(i32, @intCast(idx));
     const h = cellSize * @as(i32, @intCast(idx));
+
+    // Validate dimensions BEFORE creating surface
+    if (w <= 0 or h <= 0) {
+        kr.std.debug.print("Error: Invalid image dimensions: {d}x{d}\n", .{ w, h });
+        return error.InvalidImageDimensions;
+    }
+
+    if (w > MAX_IMAGE_DIMENSION or h > MAX_IMAGE_DIMENSION) {
+        kr.std.debug.print(
+            "Error: Image too large: {d}x{d} exceeds maximum of {d}x{d}\n",
+            .{ w, h, MAX_IMAGE_DIMENSION, MAX_IMAGE_DIMENSION },
+        );
+        kr.std.debug.print(
+            "Tip: For matrix order {d}, the maximum safe cell size is {d} pixels\n",
+            .{ idx, @divFloor(MAX_IMAGE_DIMENSION, @as(i32, @intCast(idx))) },
+        );
+        return error.ImageTooLarge;
+    }
+
+    const total_pixels = @as(i64, w) * @as(i64, h);
+    if (total_pixels > MAX_IMAGE_PIXELS) {
+        kr.std.debug.print(
+            "Error: Image has too many pixels: {d} exceeds maximum of {d}\n",
+            .{ total_pixels, MAX_IMAGE_PIXELS },
+        );
+        return error.TooManyPixels;
+    }
 
     _ = sdl.SDL_SetHint(sdl.SDL_HINT_RENDER_SCALE_QUALITY, "0");
 
@@ -270,10 +350,11 @@ pub fn export_screen(title: [*c]const u8, matrix: *kr.KravchukMatrix, idx: usize
     );
     defer sdl.SDL_FreeSurface(surface);
 
-    if (surface == null)
+    if (surface == null) {
+        kr.std.debug.print("Failed to create surface of size {d}x{d}\n", .{ w, h });
         return error.SurfaceCreationFailed;
+    }
 
-    // Fill background (optional)
     const bg = sdl.SDL_MapRGBA(
         surface.*.format,
         background.r,
@@ -313,4 +394,38 @@ pub fn export_screen(title: [*c]const u8, matrix: *kr.KravchukMatrix, idx: usize
         sdl.SDL_Log("Failed to save image: %s", sdl.SDL_GetError());
         return error.ImageSaveFailed;
     }
+
+    kr.std.debug.print(
+        "Successfully saved {d}x{d} image ({d} megapixels)\n",
+        .{ w, h, @divFloor(total_pixels, 1_000_000) },
+    );
+}
+
+fn calculate_safe_cell_size(idx: usize) i32 {
+    const idx_i32 = @as(i32, @intCast(idx));
+
+    const max_cell_for_dimension = @divFloor(MAX_IMAGE_DIMENSION, idx_i32);
+
+    const max_total_for_pixels = @as(i32, @intFromFloat(@sqrt(@as(f64, @floatFromInt(MAX_IMAGE_PIXELS)))));
+    const max_cell_for_pixels = @divFloor(max_total_for_pixels, idx_i32);
+
+    const absolute_max = @min(max_cell_for_dimension, max_cell_for_pixels);
+
+    var cell_size: i32 = undefined;
+
+    if (idx <= 50) {
+        cell_size = 20;
+    } else if (idx <= 100) {
+        cell_size = 15;
+    } else if (idx <= 250) {
+        cell_size = 10;
+    } else if (idx <= 500) {
+        cell_size = 5;
+    } else if (idx <= 1000) {
+        cell_size = 3;
+    } else {
+        cell_size = 2;
+    }
+
+    return @min(cell_size, absolute_max);
 }

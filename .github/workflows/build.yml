@@ -82,7 +82,7 @@ jobs:
       - name: Build (Windows)
         if: matrix.os == 'windows-latest'
         run: |
-          zig build -Doptimize=ReleaseFast --search-prefix "C:\vcpkg\installed\x64-windows"
+          zig build -Doptimize=ReleaseFast -Dcpu=baseline --search-prefix "C:\vcpkg\installed\x64-windows"
         shell: pwsh
         env:
           ZIG_VERSION: 0.15.2
@@ -93,7 +93,7 @@ jobs:
       - name: Build (Linux/Mac)
         if: matrix.os != 'windows-latest'
         run: |
-          zig build -Doptimize=ReleaseFast
+          zig build -Doptimize=ReleaseFast -Dcpu=baseline
         shell: bash
 
             # ---------- PACKAGE ----------
