@@ -210,12 +210,11 @@ fn handle_render_command(args: *std.process.ArgIterator) !void {
     if (n_val > MAX_MATRIX_ORDER) {
         const msg = try std.fmt.allocPrint(
             allocator,
-            "(Console) Matrix order {d} exceeds maximum of {d}.",
-            .{ n_val, kr.number_of_matrices },
+            "(Console) Matrix order {d} recommended maximum {d}.",
+            .{ n_val, MAX_MATRIX_ORDER },
         );
         defer allocator.free(msg);
         try log(msg);
-        return error.MatrixOrderTooLarge;
     }
 
     const start_msg = try std.fmt.allocPrint(

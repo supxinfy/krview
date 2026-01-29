@@ -269,7 +269,7 @@ pub const Menu = struct {
             "  Mouse Click         - Show cell value",
             "",
             "Actions:",
-            "  E                   - Export as PNG",
+            "  E                   - Export as PNG to assets/screenshots/",
             "  H or SPACE          - Toggle help",
             "  ESC                 - Back to menu",
         };

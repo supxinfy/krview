@@ -63,8 +63,8 @@ fn render_status_bar(
 
     const status_text = try kr.std.fmt.bufPrint(
         status_buf,
-        "Order: {d}/{d} | Modulo: {d} | {s} | [H] Help | [E] Export\x00",
-        .{ order, kr.number_of_calcmatrices, kr.moduli_list[modulo], clrs.current_color_scheme.name },
+        "Order: {d}/{d} | Modulo: {d} | {s} | Zoom: {d}x | \x00",
+        .{ order, kr.number_of_calcmatrices, kr.moduli_list[modulo], clrs.current_color_scheme.name, scaling },
     );
 
     const status_surface = sdl.TTF_RenderText_Solid(
@@ -90,38 +90,6 @@ fn render_status_bar(
 pub fn render(renderer: *sdl.SDL_Renderer, font: *sdl.TTF_Font, matrix: *kr.KravchukMatrix, idx: usize, modulo: usize, cell_display: *menu.CellValueDisplay, allocator: std.mem.Allocator) !void {
     _ = sdl.SDL_SetRenderDrawColor(renderer, background.r, background.g, background.b, background.a);
     _ = sdl.SDL_RenderClear(renderer);
-
-    // const order_surface = sdl.TTF_RenderText_Solid(font, order_str, tosdlcolor(text_color));
-    // defer sdl.SDL_FreeSurface(order_surface);
-
-    // if (order_surface == null) {
-    //     sdl.SDL_Log("Unable to initialize sdl: %s", sdl.SDL_GetError());
-    //     return error.sdlSurfaceNotFound;
-    // }
-    // const order_texture = sdl.SDL_CreateTextureFromSurface(renderer, order_surface);
-    // defer sdl.SDL_DestroyTexture(order_texture);
-
-    // const modulo_surface = sdl.TTF_RenderText_Solid(font, modulo_str, tosdlcolor(text_color));
-    // defer sdl.SDL_FreeSurface(modulo_surface);
-
-    // if (modulo_surface == null) {
-    //     sdl.SDL_Log("Unable to initialize sdl: %s", sdl.SDL_GetError());
-    //     return error.sdlSurfaceNotFound;
-    // }
-    // const modulo_texture = sdl.SDL_CreateTextureFromSurface(renderer, modulo_surface);
-    // defer sdl.SDL_DestroyTexture(modulo_texture);
-
-    // _ = sdl.SDL_SetRenderDrawColor(renderer, text_color.r, text_color.g, text_color.b, text_color.a);
-
-    // const srcrect_order = make_rect(0, 0, 2 * order_surface.*.w, 2 * order_surface.*.h);
-    // const dstrect_order = make_rect(0, 0, 2 * order_surface.*.w, 2 * order_surface.*.h);
-
-    // const srcrect_modulo = make_rect(0, 0, 2 * modulo_surface.*.w, 2 * modulo_surface.*.h);
-    // const dstrect_modulo = make_rect(0, order_surface.*.h + 18, 2 * modulo_surface.*.w, 2 * modulo_surface.*.h);
-
-    // _ = sdl.SDL_RenderCopy(renderer, order_texture, &srcrect_order, &dstrect_order);
-
-    // _ = sdl.SDL_RenderCopy(renderer, modulo_texture, &srcrect_modulo, &dstrect_modulo);
 
     const real_idx = idx + 1;
 
@@ -201,104 +169,6 @@ pub fn render_loading_matrices(renderer: *sdl.SDL_Renderer, font: *sdl.TTF_Font)
     const srcrect_loading = make_rect(0, 0, loading_surface.*.w, loading_surface.*.h);
     const dstrect_loading = make_rect((WINDOW_WIDTH - loading_surface.*.w) >> 1, (WINDOW_HEIGHT - loading_surface.*.h) >> 1, loading_surface.*.w, loading_surface.*.h);
     _ = sdl.SDL_RenderCopy(renderer, loading_texture, &srcrect_loading, &dstrect_loading);
-    sdl.SDL_RenderPresent(renderer);
-}
-
-var flash_press_notice: bool = true;
-pub fn render_helping_screen(renderer: *sdl.SDL_Renderer, font: *sdl.TTF_Font) !void {
-    _ = sdl.SDL_SetRenderDrawColor(renderer, background.r, background.g, background.b, background.a);
-    _ = sdl.SDL_RenderClear(renderer);
-
-    const desctiption_lines = [_][*c]const u8{
-        "Krawtchouk Matrices Visualization Tool",
-        "-------------------------------------",
-        "This application visualizes Krawtchouk matrices, which are",
-        "orthogonal matrices with applications in coding theory,",
-        "signal processing, and combinatorial designs.",
-        " ",
-        "Use the controls below to explore different orders and moduli.",
-        " ",
-    };
-
-    const help_lines = [_][*c]const u8{
-        "Controls:",
-        "  Navigation:",
-        "    W/S or arrows   Change Matrix Order",
-        "    A/D or arrows   Change Modulo",
-        "    Hold SHIFT      Fast navigation",
-        "  View:",
-        "    C               Cycle Color Scheme",
-        "    Z/X             Zoom In/Out",
-        "    I/J/K/L         Pan view",
-        "    R               Reset view",
-        "    Mouse Drag      Pan matrix",
-        "    Mouse Click     Show cell value",
-        "  Actions:",
-        "    E               Export as PNG",
-        "    H or SPACE      Toggle this help",
-        "    Q or ESC        Quit",
-        " ",
-        "Current schemes: Gogin, Gray, Log,",
-        "Viridis, Plasma, Inferno, Magma",
-    };
-    var line_y: i32 = 0;
-    for (desctiption_lines) |line| {
-        const description_surface = sdl.TTF_RenderText_Solid(font, line, tosdlcolor(text_color));
-        defer sdl.SDL_FreeSurface(description_surface);
-
-        if (description_surface == null) {
-            sdl.SDL_Log("Unable to initialize sdl: %s", sdl.SDL_GetError());
-            return error.sdlSurfaceNotFound;
-        }
-        const description_texture = sdl.SDL_CreateTextureFromSurface(renderer, description_surface);
-        defer sdl.SDL_DestroyTexture(description_texture);
-
-        _ = sdl.SDL_SetRenderDrawColor(renderer, text_color.r, text_color.g, text_color.b, text_color.a);
-
-        const particular_point_x = (@as(c_int, @intCast(WINDOW_WIDTH)) - description_surface.*.w) >> 1;
-        const dstrect_description = make_rect(particular_point_x, 50 + line_y + description_surface.*.h, description_surface.*.w, description_surface.*.h);
-        _ = sdl.SDL_RenderCopy(renderer, description_texture, null, &dstrect_description);
-
-        line_y += description_surface.*.h + 10;
-    }
-    line_y = 0;
-    for (help_lines) |line| {
-        const helping_surface = sdl.TTF_RenderText_Solid(font, line, tosdlcolor(text_color));
-        defer sdl.SDL_FreeSurface(helping_surface);
-
-        if (helping_surface == null) {
-            sdl.SDL_Log("Unable to initialize sdl: %s", sdl.SDL_GetError());
-            return error.sdlSurfaceNotFound;
-        }
-        const helping_texture = sdl.SDL_CreateTextureFromSurface(renderer, helping_surface);
-        defer sdl.SDL_DestroyTexture(helping_texture);
-
-        _ = sdl.SDL_SetRenderDrawColor(renderer, text_color.r, text_color.g, text_color.b, text_color.a);
-
-        const particular_point_x = 108;
-        const dstrect_helping = make_rect(particular_point_x, line_y + (WINDOW_HEIGHT - helping_surface.*.h) >> 1, helping_surface.*.w, helping_surface.*.h);
-        _ = sdl.SDL_RenderCopy(renderer, helping_texture, null, &dstrect_helping);
-
-        line_y += helping_surface.*.h + 10;
-    }
-    if (flash_press_notice) {
-        const press_surface = sdl.TTF_RenderText_Solid(font, "Press H or SPACE to continue...", tosdlcolor(text_color));
-        defer sdl.SDL_FreeSurface(press_surface);
-
-        if (press_surface == null) {
-            sdl.SDL_Log("Unable to initialize sdl: %s", sdl.SDL_GetError());
-            return error.sdlSurfaceNotFound;
-        }
-        const press_texture = sdl.SDL_CreateTextureFromSurface(renderer, press_surface);
-        defer sdl.SDL_DestroyTexture(press_texture);
-
-        _ = sdl.SDL_SetRenderDrawColor(renderer, text_color.r, text_color.g, text_color.b, text_color.a);
-
-        const dstrect_press = make_rect((WINDOW_WIDTH - press_surface.*.w) >> 1, WINDOW_HEIGHT - 100, press_surface.*.w, press_surface.*.h);
-        _ = sdl.SDL_RenderCopy(renderer, press_texture, null, &dstrect_press);
-    }
-    flash_press_notice = !flash_press_notice;
-
     sdl.SDL_RenderPresent(renderer);
 }
 
